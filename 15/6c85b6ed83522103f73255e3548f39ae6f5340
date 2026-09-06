@@ -1,0 +1,25 @@
+src/tokens/token.enum.h
+  h_cf6208e37032c0 14,40-41
+  s_5a9377f32dc7c0::t_a9ae48c2d1244c 5-13,15,17-39,42-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "156c85b6ed83522103f73255e3548f39ae6f5340",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5a9377f32dc7c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b49333f-5038-4aee-ab61-2568c24252aa",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

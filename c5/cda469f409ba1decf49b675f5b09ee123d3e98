@@ -1,0 +1,25 @@
+src/tokens/tokenTable.h
+  h_cf6208e37032c0 49
+  s_5a9377f32dc7c0::t_c1976380750a3e 1-48,50-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "c5cda469f409ba1decf49b675f5b09ee123d3e98",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5a9377f32dc7c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b49333f-5038-4aee-ab61-2568c24252aa",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

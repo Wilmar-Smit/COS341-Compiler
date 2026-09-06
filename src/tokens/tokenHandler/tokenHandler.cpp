@@ -1,4 +1,13 @@
 #include "tokenHandler.h"
+#include <stdexcept>
+
+TokenHandler::TokenHandler() : next(nullptr) {}
+
+TokenHandler &TokenHandler::setMatchString(string match) {
+  this->pattern =
+      std::regex(match, std::regex::ECMAScript | std::regex::optimize);
+  return *this;
+}
 
 TokenHandler *TokenHandler::SetNext(TokenHandler *tokenHandler) {
   if (tokenHandler) {
@@ -9,4 +18,38 @@ TokenHandler *TokenHandler::SetNext(TokenHandler *tokenHandler) {
     }
   }
   return this;
+}
+
+TokenResult TokenHandler::handle(string stream) {
+  if (stream.empty()) {
+    return {nullptr, ""};
+  }
+
+  size_t spacePos = stream.find(' ');
+
+  string candidateTokenStr;
+  string remaining;
+
+  if (spacePos != string::npos) {
+    candidateTokenStr = stream.substr(0, spacePos);
+    remaining = stream.substr(spacePos);
+  } else {
+    candidateTokenStr = stream;
+    remaining = "";
+  }
+
+  if (std::regex_match(candidateTokenStr, this->pattern)) {
+
+    TokenResult result = this->handleFunc(candidateTokenStr);
+
+    result.remainingStream = remaining;
+    return result;
+  }
+
+  if (this->next) {
+    return this->next->handle(stream);
+  }
+
+  throw std::runtime_error("Unexpected token symbol: '" + candidateTokenStr +
+                           "'");
 }

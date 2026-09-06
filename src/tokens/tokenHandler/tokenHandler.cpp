@@ -35,19 +35,16 @@ TokenResult TokenHandler::handle(string stream) {
     remaining = stream.substr(spacePos);
   } else {
     candidateTokenStr = stream;
-    remaining = "";
+    remaining = ""; // can maybe make this $ for eof
   }
 
   if (std::regex_match(candidateTokenStr, this->pattern)) {
-
-    TokenResult result = this->handleFunc(candidateTokenStr);
-
-    result.remainingStream = remaining;
-    return result;
+    return this->handleFunc(candidateTokenStr,
+                            remaining); // i should return the my token
   }
 
   if (this->next) {
-    return this->next->handle(stream);
+    return this->next->handle(stream); // my next should handle this
   }
 
   throw std::runtime_error("Unexpected token symbol: '" + candidateTokenStr +

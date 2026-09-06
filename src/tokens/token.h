@@ -9,7 +9,7 @@ class Token {
 public:
   Token(string str) {
     this->code = str;
-  } // the token not including the spaces " mod " == "mod"
+  } 
   TokenType getType() { return this->type; }
 
 protected:

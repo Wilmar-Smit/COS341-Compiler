@@ -1,0 +1,14 @@
+src/tokens/tokenTable.h
+  h_cf6208e37032c0 13-21,23-47,49-53,57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "1c6e505591c79ed1699fda55ae5220db66311558",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

@@ -1,18 +1,30 @@
-cmake_minimum_required(VERSION 3.28)
-project(COS341-Compiler CXX)
+cmake_minimum_required(VERSION 3.12)
+project(compiler LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Define executable
+add_executable(compiler)
 
-file(GLOB_RECURSE MODULE_SOURCES CONFIGURE_DEPENDS
-"${CMAKE_CURRENT_SOURCE_DIR}/src/*.cppm")
+# Configure build dependencies (includes main.cpp and recursive src files)
+target_sources(compiler
+    PRIVATE
+        src/main.cpp
+)
 
-add_executable(compiler src/main.cpp)
+# Recursively locate source and header files
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cpp")
+file(GLOB_RECURSE HEADERS CONFIGURE_DEPENDS "src/*.h")
 
 target_sources(compiler
-    PUBLIC
-        FILE_SET CXX_MODULES TYPE CXX_MODULES FILES
-            ${MODULE_SOURCES}
+    PRIVATE
+        ${SOURCES}
+        ${HEADERS}
+)
+
+# Expose header search paths for recursive directories
+target_include_directories(compiler
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )

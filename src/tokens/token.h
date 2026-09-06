@@ -7,9 +7,7 @@ using std::string;
 class Token {
 
 public:
-  Token(string str) {
-    this->code = str;
-  } 
+  Token(string str, TokenType type) { this->code = str; }
   TokenType getType() { return this->type; }
 
 protected:

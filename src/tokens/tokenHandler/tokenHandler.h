@@ -2,6 +2,7 @@
 #define TOKEN_HANDLER_H
 
 #include "../token.h"
+#include "token.enum.h"
 #include <regex>
 #include <string>
 
@@ -29,19 +30,23 @@ public:
   // (")
   virtual TokenResult handleFunc(string matchedString, string restOfStream) = 0;
 
+  TokenHandler &setMatchString(string match);
+  TokenHandler &setTokenType(TokenType type);
+
 protected:
   std::regex pattern;
   TokenHandler *next = nullptr;
-
-  TokenHandler &setMatchString(string match);
+  TokenType type = TokenType::MOD;
 };
 
 class ExampleHandler : public TokenHandler {
 public:
-  ExampleHandler() : TokenHandler() { this->setMatchString(R"(^mod$)"); }
+  ExampleHandler() : TokenHandler() {
+    this->setMatchString(R"(^mod$)").setTokenType(TokenType::MOD);
+  }
 
   TokenResult handleFunc(string matchedString, string restOfStream) override {
-    return {new Token(matchedString), restOfStream};
+    return {new Token(matchedString, this->type), restOfStream};
   }
 };
 

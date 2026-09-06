@@ -1,8 +1,12 @@
 #include "tokenHandler.h"
+#include "token.enum.h"
 #include <stdexcept>
 
 TokenHandler::TokenHandler() : next(nullptr) {}
-
+TokenHandler &TokenHandler::setTokenType(TokenType type) {
+  this->type = type;
+  return *this;
+}
 TokenHandler &TokenHandler::setMatchString(string match) {
   this->pattern =
       std::regex(match, std::regex::ECMAScript | std::regex::optimize);

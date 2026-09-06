@@ -25,6 +25,10 @@ TokenResult TokenHandler::handle(string stream) {
     return {nullptr, ""};
   }
 
+  if (stream[0] == ' ' && std::regex_match(" ", this->pattern)) {
+    return this->handleFunc(" ", stream.substr(1));
+  }
+
   size_t spacePos = stream.find(' ');
 
   string candidateTokenStr;

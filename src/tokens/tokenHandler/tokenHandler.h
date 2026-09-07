@@ -3,6 +3,7 @@
 
 #include "../token.h"
 #include "token.enum.h"
+#include "tokenTable.h"
 #include <regex>
 #include <string>
 
@@ -42,7 +43,8 @@ protected:
 class ExampleHandler : public TokenHandler {
 public:
   ExampleHandler() : TokenHandler() {
-    this->setMatchString(R"(^mod$)").setTokenType(TokenType::MOD);
+    // you get the regex for the token type by calling patternFor(TokenType)
+    this->setMatchString(patternFor(TokenType::MOD)).setTokenType(TokenType::MOD); 
   }
 
   TokenResult handleFunc(string matchedString, string restOfStream) override {

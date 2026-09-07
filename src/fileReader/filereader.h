@@ -40,7 +40,7 @@ std::string readFileToString(const std::string &filePath) {
     }
   }
 
-  return result;
+  return result+"$";
 }
 
 #endif

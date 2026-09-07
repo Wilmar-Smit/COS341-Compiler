@@ -11,6 +11,7 @@ enum class TokenType {
   ASSIGN,
   COLON,
   DOLLAR_EOF,
+  SPACE,
 
   // keywords
   MOD,

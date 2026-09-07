@@ -1,0 +1,29 @@
+src/tokens/tokenTable.h
+  s_5a9377f32dc7c0::t_91f423482e1c39 5
+  h_cf6208e37032c0 9,14-19,64,67
+  s_5a9377f32dc7c0::t_6b0c178b5db129 8,10-11,20,22-29,32-55,58-60,63,65,75-76
+  s_5a9377f32dc7c0::t_d3ec764c99da89 68-74,77-80
+  s_5a9377f32dc7c0::t_e55494867c036e 12
+  h_cf6208e37032c0 66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "6ea3a8c383f74119a3eeee87839dbe51723951d0",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_5a9377f32dc7c0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3b49333f-5038-4aee-ab61-2568c24252aa",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

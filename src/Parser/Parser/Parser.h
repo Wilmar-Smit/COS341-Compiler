@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "../ParserActions/parser.actions.h"
+#include "parser.visitor.h"
 #include "token.h"
 #include <vector>
 using std::vector;
@@ -13,9 +14,11 @@ class Parser {
 
 private:
   vector<vector<ParserAction *>> table; // gets filled in by the function
+  ParseVisitor *visitor = nullptr;
 
 public:
   Parser();
+  ~Parser();
   auto ParseTokens(vector<Token *> tokens);
 };
 

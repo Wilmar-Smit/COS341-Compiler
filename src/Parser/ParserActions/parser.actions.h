@@ -7,6 +7,7 @@ class ParserAction {
 
 public:
   ParserAction() {}
+  virtual ~ParserAction() {}
   virtual void AcceptVisitor(ParseVisitor *vis) = 0;
 };
 

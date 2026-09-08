@@ -11,13 +11,13 @@ Parser::Parser() {
   this->stack.push(ParserStates::S0); // S0 pushed on
 
   this->visitor = new ParseVisitor(
-      table, stack); // does not manage memory these are just stacks
+      table, gotoTable,
+      stack); // does not manage memory these are just references
 }
 
 auto Parser::ParseTokens(vector<Token *> tokens) {
 
-  for (auto token : tokens) {
-  }
+  visitor->parseTokens(tokens);
 }
 
 // memory management

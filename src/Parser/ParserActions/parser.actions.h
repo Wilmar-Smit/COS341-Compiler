@@ -1,6 +1,7 @@
 #ifndef PARSE_ACTIONS_H
 #define PARSE_ACTIONS_H
 
+#include "../Parser/ProductionRules.h"
 #include "../ParserVisitor/parser.visitor.h"
 #include "state.enum.h"
 class ParserAction {
@@ -30,8 +31,11 @@ public:
 class ReduceAction : public ParserAction {
   friend class ParseVisitor;
 
+private:
+  ProductionRule rule;
+
 public:
-  ReduceAction() {}
+  ReduceAction(ProductionRule rule) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
@@ -56,9 +60,10 @@ public:
 // stores next index to lookup in the table
 class GotoAction : public ParserAction {
   friend class ParseVisitor;
+  ParserStates state;
 
 public:
-  GotoAction() {}
+  GotoAction(ParserStates state) : state(state) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 

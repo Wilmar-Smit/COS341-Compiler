@@ -1,13 +1,23 @@
 #include "Parser.h"
 #include "createParseTable.h"
 #include "parser.visitor.h"
+#include "state.enum.h"
+#include <stack>
+
 // adds the parser
 Parser::Parser() {
   this->table = createParseTable();
-  this->visitor = new ParseVisitor();
+  this->stack.push(ParserStates::S0); // S0 pushed on
+
+  this->visitor = new ParseVisitor(
+      table, stack); // does not manage memory these are just stacks
 }
 
-auto Parser::ParseTokens(vector<Token *> tokens) {}
+auto Parser::ParseTokens(vector<Token *> tokens) {
+
+  for (auto token : tokens) {
+  }
+}
 
 // memory management
 Parser::~Parser() {

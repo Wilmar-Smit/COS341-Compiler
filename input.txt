@@ -1,0 +1,6 @@
+num #calculate ( num #x ) {
+    #result = add ( #x 10 ) ;
+    print "the-result-is:" ;
+    print #result ;
+    return ( #result )
+}

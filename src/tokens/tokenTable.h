@@ -27,6 +27,7 @@ inline constexpr std::array<const char *, TOKEN_TYPE_COUNT> PATTERN_BY_TYPE = {
   R"(=)",   // ASSIGN
   R"(:)",   // COLON
   R"(\$)",  // DOLLAR_EOF
+  R"( )",
 
   // keywords
   R"(\bmod\b)",     // MOD

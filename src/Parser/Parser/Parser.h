@@ -6,6 +6,11 @@
 #include <vector>
 using std::vector;
 class Parser {
+  /**
+   * handles the delection of the SLR parse Table
+   * Does not delete the tokens array !
+   */
+
 private:
   vector<vector<ParserAction *>> table; // gets filled in by the function
 

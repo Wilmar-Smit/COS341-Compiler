@@ -2,7 +2,6 @@
 #include "createParseTable.h"
 #include "parser.visitor.h"
 #include "state.enum.h"
-#include <stack>
 
 // adds the parser
 Parser::Parser() {
@@ -17,7 +16,14 @@ Parser::Parser() {
 
 auto Parser::ParseTokens(vector<Token *> tokens) {
 
-  visitor->parseTokens(tokens);
+  auto accept = visitor->parseTokens(tokens);
+
+  if (accept) {
+    // return visitor . get composite tree
+  }
+  else {
+    // throw exeption ? idk
+  }
 }
 
 // memory management

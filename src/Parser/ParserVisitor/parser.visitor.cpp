@@ -1,6 +1,7 @@
 #include "parser.visitor.h"
 #include "ProductionRules.h"
 #include "parser.actions.h"
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 
@@ -26,8 +27,9 @@ bool ParseVisitor::parseTokens(vector<Token *> tokens) {
       action->AcceptVisitor(this);
     }
   } catch (std::runtime_error e) {
+    std::cout << e.what() << std::endl;
+    return false;
   }
-
   return this->hitAcceptState;
 }
 

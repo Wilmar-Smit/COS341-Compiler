@@ -2,7 +2,7 @@
 #define STATE_ENUM_H
 
 // these are the row states lookupTable[state][token]
-enum class rowStates {
+enum class ParserStates {
   S0,
 };
 

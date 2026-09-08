@@ -3,7 +3,7 @@
 #include "parser.actions.h"
 #include <sstream>
 #include <stdexcept>
-#include <string>
+
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
                            std::stack<ParserStates> &stack)

@@ -26,7 +26,7 @@ compile:
 	@./$(BUILD_DIR)/$(EXEC)
 
 clean:
-	@rm -rf $(BUILD_DIR) compile_commands.json .clangd
+	@rm -rf $(BUILD_DIR) compile_commands.json .clangd .cache
 
 re: clean build
 

@@ -7,6 +7,7 @@
 // adds the parser
 Parser::Parser() {
   this->table = createParseTable();
+  this->gotoTable = createGotoTable();
   this->stack.push(ParserStates::S0); // S0 pushed on
 
   this->visitor = new ParseVisitor(

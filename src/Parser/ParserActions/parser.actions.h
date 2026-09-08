@@ -2,6 +2,7 @@
 #define PARSE_ACTIONS_H
 
 #include "../ParserVisitor/parser.visitor.h"
+#include "state.enum.h"
 class ParserAction {
   friend class ParseVisitor;
 
@@ -15,13 +16,17 @@ public:
 class ShiftAction : public ParserAction {
   friend class ParseVisitor;
 
+  ParserStates state;
+
 public:
-  ShiftAction() {}
+  // simple just stores the next state to put onto the stack
+  ShiftAction(ParserStates state) : state(state) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
 // Stores information needed to delete from the stack as well as which index
 // from goto table to hit
+
 class ReduceAction : public ParserAction {
   friend class ParseVisitor;
 

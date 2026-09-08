@@ -16,8 +16,13 @@ class Parser {
    */
 
 private:
-  vector<vector<ParserAction *>> table; // gets filled in by the function
-  stack<ParserStates> stack;            // looks up what the next state is
+  vector<vector<ParserAction *>>
+      table; // gets filled in by the create table function
+
+  vector<vector<ParserAction *>>
+      gotoTable; // gets filled in by the goto table function
+
+  stack<ParserStates> stack; // looks up what the next state is
 
   /**
    * @brief The visitor goes through the parse table on command of the stack

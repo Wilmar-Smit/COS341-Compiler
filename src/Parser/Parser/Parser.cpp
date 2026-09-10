@@ -20,8 +20,7 @@ auto Parser::ParseTokens(vector<Token *> tokens) {
 
   if (accept) {
     // return visitor . get composite tree
-  }
-  else {
+  } else {
     // throw exeption ? idk
   }
 }
@@ -29,6 +28,12 @@ auto Parser::ParseTokens(vector<Token *> tokens) {
 // memory management
 Parser::~Parser() {
   for (auto row : table) {
+    for (auto action : row) {
+      if (action)
+        delete action;
+    }
+  }
+  for (auto row : gotoTable) {
     for (auto action : row) {
       if (action)
         delete action;

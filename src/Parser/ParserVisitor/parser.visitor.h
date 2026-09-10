@@ -26,12 +26,10 @@ private:
   int StateIndex = 0;
   bool hitAcceptState = false;
 
-  TreeBuilder treeBuilder;
-
 public:
   ParseVisitor(vector<vector<ParserAction *>> &table,
                vector<vector<ParserAction *>> &gotoTable,
-               std::stack<ParserStates> &stack, TreeBuilder& tb);
+               std::stack<ParserStates> &stack);
 
   bool parseTokens(vector<Token *> tokens);
 

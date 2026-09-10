@@ -7,9 +7,8 @@
 
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
-                           std::stack<ParserStates> &stack,
-                           TreeBuilder &tb)
-    : table(table), stack(stack), gotoTable(gotoTable), treeBuilder(tb)
+                           std::stack<ParserStates> &stack)
+    : table(table), stack(stack), gotoTable(gotoTable)
 {
   // keeps a reference to the same tables and stack as the parser
 }

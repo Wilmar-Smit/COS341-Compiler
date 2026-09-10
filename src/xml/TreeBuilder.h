@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
 
 using namespace std;
 
@@ -24,6 +25,9 @@ class TreeBuilder{
         ~TreeBuilder();
         void createNode(string lhs, vector<string> rhs, int number_to_pop);
         void writeXML(Node* root);
+        void shiftNode(string token);
+        void reduceNode(string token);
 };
+
 
 #endif

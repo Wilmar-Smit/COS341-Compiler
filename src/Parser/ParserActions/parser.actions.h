@@ -38,7 +38,7 @@ private:
   ProductionRule rule;
 
 public:
-  ReduceAction(ProductionRule rule) {}
+  ReduceAction(ProductionRule rule) : rule(rule) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 

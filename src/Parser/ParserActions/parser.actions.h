@@ -19,6 +19,9 @@ class ShiftAction : public ParserAction {
 
   ParserStates state;
 
+private:
+  ProductionRule rule;
+
 public:
   // simple just stores the next state to put onto the stack
   ShiftAction(ParserStates state) : state(state) {}

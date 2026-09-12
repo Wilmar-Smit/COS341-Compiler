@@ -2,6 +2,7 @@
 #define CREATE_PARSE_TABLE_H
 
 #include "../ParserActions/parser.actions.h"
+#include "../../fileReader/parseTableReader.h"
 #include <vector>
 using std::vector;
 
@@ -12,13 +13,8 @@ using std::vector;
 // row : state Enum
 // Col : tokenType Enum
 auto createParseTable() {
-
-  vector<vector<ParserAction *>> table;
-  // --------------
-  // add here
-  // --------------
-
-  return table;
+  ActionTableReader reader;
+  return reader.read("SLR_ACTION_Table.csv");
 }
 
 // Goto , error
@@ -26,12 +22,8 @@ auto createParseTable() {
 // row : stateEnum
 // Col : NonTerminal Enum
 auto createGotoTable() {
-  vector<vector<ParserAction *>> table;
-  // --------------
-  // add here
-  // --------------
-
-  return table;
+  GotoTableReader reader;
+  return reader.read("SLR_GOTO_Table.csv");
 }
 
 #endif

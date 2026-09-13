@@ -20,6 +20,8 @@ class TreeBuilder{
         Node* root;
        vector<Node*> nod_stack;
 
+       void xmlHelper(string tag, Node* node, ofstream& file, int parent);
+
     public:
         TreeBuilder();
         ~TreeBuilder();

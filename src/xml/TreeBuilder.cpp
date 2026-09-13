@@ -58,7 +58,7 @@ void TreeBuilder::writeXML(Node* root) {
     file.close();
 }
 
-void xmlHelper(string tag, Node* node, ofstream& file, int parent) {
+void TreeBuilder::xmlHelper(string tag, Node* node, ofstream& file, int parent) {
     file << "<" << tag << ">\n";
     file << "<id>" << node->id << "</id>\n";
     file << "<content>" << node->symbol << "</content>\n";

@@ -36,7 +36,7 @@ private:
 public:
   Parser();
   ~Parser();
-  auto ParseTokens(vector<Token *> tokens);
+  bool ParseTokens(vector<Token *> tokens);
 };
 
 #endif

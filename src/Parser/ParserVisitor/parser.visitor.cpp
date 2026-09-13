@@ -1,10 +1,10 @@
 #include "parser.visitor.h"
+#include "../../tokens/tokenTable.h"
 #include "ProductionRules.h"
 #include "parser.actions.h"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
                            std::stack<ParserStates> &stack)
@@ -70,6 +70,7 @@ void ParseVisitor::visit(ErrorAction *action) {
 
   std::stringstream ss;
   ss << "Parsing failed: Unexpected token of type " << tableTokenIndex
+     << " Being :" << patternFor(tokens[tokenIndex]->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << ".";
 

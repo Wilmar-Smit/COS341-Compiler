@@ -1,4 +1,5 @@
 
+#include "Parser.h"
 #include "fileReader/filereader.h"
 #include "token.h"
 #include "tokenHandler.h"
@@ -62,6 +63,14 @@ int main() {
   cout << (errorOk ? GREEN : RED) << "state 0, LBRACE -> ErrorAction : "
        << (errorOk ? "PASS" : "FAIL") << RESET << endl;
 
+
+  // ------------ Run input  MANAGEMENT ------------
+  
+Parser parse;
+parse.ParseTokens(tokenList);
+
+
+  
   // ------------ MEMORY MANAGEMENT ------------
 
   for (auto &row : actionTable) {
@@ -71,8 +80,8 @@ int main() {
   }
   delete tableReader;
   for (auto token : tokenList) {
-    cout << GREEN << "Token code :[" << token->getCode() << "]" << RESET
-         << endl;
+  //  cout << GREEN << "Token code :[" << token->getCode() << "]" << RESET
+  //   << endl;
     delete token;
   }
 

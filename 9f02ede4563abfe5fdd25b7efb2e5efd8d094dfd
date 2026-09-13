@@ -1,0 +1,23 @@
+src/xml/TreeBuilder.cpp
+  h_94c952a9e14c58 9,14-15,63-83
+  h_94c952a9e14c58 62
+src/Parser/ParserVisitor/parser.visitor.cpp
+  h_94c952a9e14c58 10-12,48,63-64
+src/Parser/ParserVisitor/parser.visitor.h
+  h_94c952a9e14c58 28,33-34
+  h_94c952a9e14c58 21-24,31-32,35,37,39-44
+src/xml/TreeBuilder.h
+  h_94c952a9e14c58 7-9,11-12,15-30,42,49,51-52
+  h_94c952a9e14c58 38-41,43-48,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "9f02ede4563abfe5fdd25b7efb2e5efd8d094dfd",
+  "prompts": {},
+  "humans": {
+    "h_94c952a9e14c58": {
+      "author": "Swe-yy <u24584585@tuks.co.za>"
+    }
+  }
+}

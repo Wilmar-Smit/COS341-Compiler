@@ -1,7 +1,7 @@
 #ifndef PARSE_VISITOR_H
 #define PARSE_VISITOR_H
 
-#include "token.h"
+#include "../../tokens/token.h"
 #include <stack>
 #include <vector>
 using std::stack;

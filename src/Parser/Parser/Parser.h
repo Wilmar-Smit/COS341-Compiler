@@ -4,7 +4,7 @@
 #include "../ParserActions/parser.actions.h"
 #include "../StateEnums/state.enum.h"
 #include "parser.visitor.h"
-#include "token.h"
+#include "../../tokens/token.h"
 #include <stack>
 #include <vector>
 using std::stack;

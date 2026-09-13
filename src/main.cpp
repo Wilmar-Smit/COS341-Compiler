@@ -66,10 +66,8 @@ int main() {
 
   // ------------ Run input  MANAGEMENT ------------
   
-Parser parse;
-parse.ParseTokens(tokenList);
-
-
+  Parser parse;
+  parse.ParseTokens(tokenList);
   
   // ------------ MEMORY MANAGEMENT ------------
 

@@ -6,7 +6,7 @@ TreeBuilder::TreeBuilder() : node_id(0), root(NULL)
 
 TreeBuilder::~TreeBuilder() {}
 
-void TreeBuilder::createNode(string lhs, vector<string> rhs, int number_to_pop) {
+void TreeBuilder::createNode(string lhs, vector<string> rhs) {
 
     Node* parent = new Node();
     parent->id = node_id++;
@@ -22,6 +22,7 @@ void TreeBuilder::createNode(string lhs, vector<string> rhs, int number_to_pop) 
 
     if (rhs.back() == "$") {  // accepted end of string
         // build root 
+        
         // call writeXML
         return;
     }

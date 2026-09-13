@@ -23,7 +23,7 @@ class TreeBuilder{
     public:
         TreeBuilder();
         ~TreeBuilder();
-        void createNode(string lhs, vector<string> rhs, int number_to_pop);
+        void createNode(string lhs, vector<string> rhs);
         void writeXML(Node* root);
         void shiftNode(string token);
         void reduceNode(string token);

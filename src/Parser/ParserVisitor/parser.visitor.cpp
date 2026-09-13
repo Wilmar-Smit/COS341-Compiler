@@ -7,14 +7,14 @@
 
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
-                           std::stack<ParserStates> &stack)
-    : table(table), stateStack(stack), gotoTable(gotoTable) {
+                           std::stack<ParserStates> &stack,
+                          TreeBuilder& tb)
+    : table(table), stateStack(stack), gotoTable(gotoTable), xml(tb) {
   // keeps a reference to the same tables and stack as the parser
 }
 
 bool ParseVisitor::parseTokens(vector<Token *> tokens)
 {
-
   this->tokens = tokens;
   try
   {
@@ -45,6 +45,7 @@ void ParseVisitor::visit(ParserAction *action)
 
 void ParseVisitor::visit(ShiftAction *action) {
   this->stateStack.push(action->state);
+  xml.shiftNode(*tokens[this->tokenIndex]);
   this->tokenIndex++;
 }
 
@@ -59,6 +60,8 @@ void ParseVisitor::visit(ReduceAction *action)
   int numToPop = action->rule.numberToPop;
   NonTerminal NT = action->rule.nonTerminal;
 
+  xml.reduceNode(NT, numToPop);
+  
   for (auto i = 0; i < numToPop; i++) {
     this->stateStack.pop();
   }

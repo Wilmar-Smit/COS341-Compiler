@@ -6,33 +6,13 @@ TreeBuilder::TreeBuilder() : node_id(0), root(NULL)
 
 TreeBuilder::~TreeBuilder() {}
 
-void TreeBuilder::createNode(string lhs, vector<string> rhs) {
+Node* TreeBuilder::createNode(string lhs, vector<Node*> rhs) {
 
     Node* parent = new Node();
     parent->id = node_id++;
     parent->symbol = lhs;
-
-    if (rhs.empty()) {    // rule is nullable 
-        Node* nullable = new Node();
-        nullable->id = node_id++;
-        nullable->symbol = "ε";
-        parent->children.push_back(nullable);
-        return;
-    }
-
-    if (rhs.back() == "$") {  // accepted end of string
-        // build root 
-        
-        // call writeXML
-        return;
-    }
-
-    for (auto it = rhs.begin(); it != rhs.end(); ++it) {
-        Node* child = new Node();
-        child->id = node_id++;
-        child->symbol = *it;
-        parent->children.push_back(child);
-    }
+    parent->children = rhs;
+    return parent;
 }
 
 void TreeBuilder::writeXML(Node* root) {
@@ -79,4 +59,26 @@ void TreeBuilder::xmlHelper(string tag, Node* node, ofstream& file, int parent) 
     for (auto i = node->children.begin(); i != node->children.end(); ++i) {
         xmlHelper("node", *i, file, node->id);
     }
+}
+
+void TreeBuilder::shiftNode(Token token) {
+    string symbol = token.getCode();
+
+    Node* leaf = new Node();
+    leaf->id = node_id++;
+    leaf->symbol = symbol;
+
+    node_stack.push(leaf);
+}
+
+void TreeBuilder::reduceNode(NonTerminal nt, int number_to_pop) {
+    vector<Node*> children;
+
+    for (int i = 0; i < number_to_pop; i++) {
+        children.insert(children.begin(), node_stack.top());
+        node_stack.pop();
+    }
+
+    Node* parent = createNode(NonTerminalToName(nt), children);
+    node_stack.push(parent);
 }

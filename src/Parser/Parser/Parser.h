@@ -4,7 +4,7 @@
 #include "../ParserActions/parser.actions.h"
 #include "../StateEnums/state.enum.h"
 #include "parser.visitor.h"
-#include "token.h"
+#include "../../tokens/token.h"
 #include <stack>
 #include <vector>
 using std::stack;
@@ -22,7 +22,7 @@ private:
   vector<vector<ParserAction *>>
       gotoTable; // gets filled in by the goto table function
 
-  stack<ParserStates> stack; // looks up what the next state is
+  stack<ParserStates> stateStack; // looks up what the next state is
 
   /**
    * @brief The visitor goes through the parse table on command of the stack
@@ -36,7 +36,7 @@ private:
 public:
   Parser();
   ~Parser();
-  auto ParseTokens(vector<Token *> tokens);
+  bool ParseTokens(vector<Token *> tokens);
 };
 
 #endif

@@ -8,11 +8,11 @@
 Parser::Parser() {
   this->table = createParseTable();
   this->gotoTable = createGotoTable();
-  this->stack.push(ParserStates::S0); // S0 pushed on
+  this->stateStack.push(ParserStates::S0); // S0 pushed on
 
   this->visitor = new ParseVisitor(
       table, gotoTable,
-      stack); // does not manage memory these are just references
+      stateStack); // does not manage memory these are just references
 }
 
 bool Parser::ParseTokens(vector<Token *> tokens) {

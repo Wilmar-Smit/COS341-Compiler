@@ -5,10 +5,13 @@
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
+
+using namespace std;
+
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
-                           std::stack<ParserStates> &stack)
-    : table(table), stack(stack), gotoTable(gotoTable) {
+                           std::stack<ParserStates> &stateStack)
+    : table(table), stateStack(stateStack), gotoTable(gotoTable) {
   // keeps a reference to the same tables and stack as the parser
 }
 
@@ -18,12 +21,17 @@ bool ParseVisitor::parseTokens(vector<Token *> tokens) {
   try {
     while (this->tokenIndex < tokens.size()) {
 
-      this->StateIndex = static_cast<int>(stack.top());
+      if (tokens[this->tokenIndex]->getCode() == " "){
+        this->tokenIndex++;
+        continue;
+      }
+
+      this->StateIndex = static_cast<int>(stateStack.top());
       int tableTokenIndex =
           static_cast<int>(tokens[this->tokenIndex]->getType());
 
       auto action = table[StateIndex][tableTokenIndex];
-
+      
       action->AcceptVisitor(this);
     }
   } catch (std::runtime_error e) {
@@ -38,12 +46,12 @@ void ParseVisitor::visit(ParserAction *action) {
 }
 
 void ParseVisitor::visit(ShiftAction *action) {
-  this->stack.push(action->state);
+  this->stateStack.push(action->state);
   this->tokenIndex++;
 }
 
 void ParseVisitor::visit(GotoAction *action) {
-  this->stack.push(action->state);
+  this->stateStack.push(action->state);
 }
 
 void ParseVisitor::visit(AcceptAction *action) { this->hitAcceptState = true; }
@@ -53,10 +61,10 @@ void ParseVisitor::visit(ReduceAction *action) {
   NonTerminal NT = action->rule.nonTerminal;
 
   for (auto i = 0; i < numToPop; i++) {
-    this->stack.pop();
+    this->stateStack.pop();
   }
 
-  int exposedStateIndex = static_cast<int>(stack.top());
+  int exposedStateIndex = static_cast<int>(stateStack.top());
 
   auto nonTerminalIndex = static_cast<int>(NT);
   auto gotoAction = gotoTable[exposedStateIndex][nonTerminalIndex];
@@ -65,7 +73,7 @@ void ParseVisitor::visit(ReduceAction *action) {
 }
 
 void ParseVisitor::visit(ErrorAction *action) {
-  int stateIndex = static_cast<int>(stack.top());
+  int stateIndex = static_cast<int>(stateStack.top());
   int tableTokenIndex = static_cast<int>(tokens[tokenIndex]->getType());
 
   std::stringstream ss;

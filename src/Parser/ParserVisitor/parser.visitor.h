@@ -18,7 +18,7 @@ class ParseVisitor {
 private:
   vector<vector<ParserAction *>> &table;
   vector<vector<ParserAction *>> &gotoTable;
-  stack<ParserStates> &stack;
+  stack<ParserStates> &stateStack;
   vector<Token *> tokens;
   int tokenIndex = 0;
   int StateIndex = 0;
@@ -27,7 +27,7 @@ private:
 public:
   ParseVisitor(vector<vector<ParserAction *>> &table,
                vector<vector<ParserAction *>> &gotoTable,
-               std::stack<ParserStates> &stack);
+               std::stack<ParserStates> &stateStack);
 
   bool parseTokens(vector<Token *> tokens);
 

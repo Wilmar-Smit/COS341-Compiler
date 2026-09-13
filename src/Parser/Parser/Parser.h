@@ -22,7 +22,7 @@ private:
   vector<vector<ParserAction *>>
       gotoTable; // gets filled in by the goto table function
 
-  stack<ParserStates> stack; // looks up what the next state is
+  stack<ParserStates> stateStack; // looks up what the next state is
 
   /**
    * @brief The visitor goes through the parse table on command of the stack

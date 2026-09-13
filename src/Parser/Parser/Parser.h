@@ -5,6 +5,8 @@
 #include "../StateEnums/state.enum.h"
 #include "parser.visitor.h"
 #include "token.h"
+#include "TreeBuilder.h"
+
 #include <stack>
 #include <vector>
 using std::stack;
@@ -23,6 +25,8 @@ private:
       gotoTable; // gets filled in by the goto table function
 
   stack<ParserStates> stateStack; // looks up what the next state is
+  
+  TreeBuilder xml;
 
   /**
    * @brief The visitor goes through the parse table on command of the stack

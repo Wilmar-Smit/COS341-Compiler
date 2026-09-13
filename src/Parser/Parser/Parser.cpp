@@ -8,19 +8,22 @@ Parser::Parser() {
   this->table = createParseTable();
   this->gotoTable = createGotoTable();
   this->stateStack.push(ParserStates::S0); // S0 pushed on
-
+  this->xml = TreeBuilder();
   this->visitor = new ParseVisitor(
-      table, gotoTable,
-      stateStack); // does not manage memory these are just references
+    table, gotoTable,
+    stateStack,
+    xml
+  ); // does not manage memory these are just references
 }
 
-auto Parser::ParseTokens(vector<Token *> tokens) {
+auto Parser::ParseTokens(vector<Token*> tokens) {
 
   auto accept = visitor->parseTokens(tokens);
 
   if (accept) {
     // return visitor . get composite tree
-  } else {
+  }
+  else {
     // throw exeption ? idk
   }
 }

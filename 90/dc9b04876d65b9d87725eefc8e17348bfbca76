@@ -1,0 +1,20 @@
+src/Parser/ParserVisitor/parser.visitor.cpp
+  h_cf6208e37032c0 8-10,22-28,31-32,36,86
+  h_cf6208e37032c0 37
+input.txt
+  h_cf6208e37032c0 1
+src/Parser/ParserActions/parser.actions.cpp
+  h_cf6208e37032c0 1,5,7,9,11,13,15
+  h_cf6208e37032c0 14
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "90dc9b04876d65b9d87725eefc8e17348bfbca76",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

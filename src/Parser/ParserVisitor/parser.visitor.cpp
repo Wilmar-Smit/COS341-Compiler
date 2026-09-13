@@ -70,7 +70,7 @@ void ParseVisitor::visit(ErrorAction *action) {
 
   std::stringstream ss;
   ss << "Parsing failed: Unexpected token of type " << tableTokenIndex
-     << " Being :" << patternFor(tokens[tokenIndex]->getType())
+     << " Being: " << patternFor(tokens[tokenIndex]->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << ".";
 

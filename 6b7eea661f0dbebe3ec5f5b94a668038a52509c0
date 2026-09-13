@@ -1,0 +1,16 @@
+src/xml/TreeBuilder.h
+  h_94c952a9e14c58 26
+src/xml/TreeBuilder.cpp
+  h_94c952a9e14c58 9,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "6b7eea661f0dbebe3ec5f5b94a668038a52509c0",
+  "prompts": {},
+  "humans": {
+    "h_94c952a9e14c58": {
+      "author": "Swe-yy <u24584585@tuks.co.za>"
+    }
+  }
+}

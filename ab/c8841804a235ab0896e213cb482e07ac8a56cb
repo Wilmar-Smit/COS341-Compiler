@@ -1,0 +1,17 @@
+src/Parser/Parser/Parser.h
+  h_94c952a9e14c58 8-9,28-29
+src/Parser/Parser/Parser.cpp
+  h_94c952a9e14c58 11,14-15
+  h_94c952a9e14c58 13,16,19,25-26
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "abc8841804a235ab0896e213cb482e07ac8a56cb",
+  "prompts": {},
+  "humans": {
+    "h_94c952a9e14c58": {
+      "author": "Swe-yy <u24584585@tuks.co.za>"
+    }
+  }
+}

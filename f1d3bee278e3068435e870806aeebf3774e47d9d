@@ -1,0 +1,40 @@
+src/Parser/Parser/ProductionRules.h
+  s_6040e124516e65::t_9d910553760e17 7,9,30-32,35
+  s_6040e124516e65::t_b9ec3f6340bfbb 4-6,8,10-11
+src/tokens/token.h
+  s_6040e124516e65::t_0c28bb9bdff318 10-13
+src/fileReader/parseTableReader.h
+  h_cf6208e37032c0 50
+  h_cf6208e37032c0 1-49,51-61
+.vscode/c_cpp_properties.json
+  s_6040e124516e65::t_ae1780bec51374 1-29
+src/Parser/ParserActions/parser.actions.h
+  h_cf6208e37032c0 22-24
+src/Parser/Parser/createParseTable.h
+  s_6040e124516e65::t_e2fb88b37e3c52 5,16-17,25-26
+SLR_ACTION_Table.csv
+  h_cf6208e37032c0 1-144
+SLR_GOTO_Table.csv
+  h_cf6208e37032c0 1-144
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f1d3bee278e3068435e870806aeebf3774e47d9d",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_6040e124516e65": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2dcddead-df08-436e-a899-9f21e285ed1a",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  }
+}

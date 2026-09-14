@@ -17,6 +17,8 @@ void test();
 
 int main() {
 
+  cout << "\n\n------------ STARTING COMPILATION ------------\n\n" << endl;
+
   TokenHandler *chain = createChain();
 
   std::vector<Token *> tokenList;
@@ -45,6 +47,8 @@ int main() {
 
   Parser parse;
   parse.ParseTokens(tokenList);
+
+  cout << "\n\n------------ ENDING COMPILATION ------------\n\n" << endl;
 
   // ------------ MEMORY MANAGEMENT ------------
 

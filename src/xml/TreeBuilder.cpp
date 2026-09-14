@@ -1,13 +1,12 @@
 #include "TreeBuilder.h"
 
-TreeBuilder::TreeBuilder() : node_id(0), root(NULL)
+TreeBuilder::TreeBuilder() : node_id(0)
 {
 }
 
 TreeBuilder::~TreeBuilder() {}
 
 Node* TreeBuilder::createNode(string lhs, vector<Node*> rhs) {
-
     Node* parent = new Node();
     parent->id = node_id++;
     parent->symbol = lhs;
@@ -19,45 +18,59 @@ void TreeBuilder::writeXML(Node* root) {
     // build root 
     ofstream file("tree.xml");
 
+    int depth = 0;
+
     file << "<tree>\n";
-    file << "<root>\n";
-    file << "<id>" << root->id << "</id>\n";
-    file << "<content>" << root->symbol << "</content>\n";
-    file << "<children>\n";
+    depth++;
+
+    file << indent(depth) << "<root>\n";
+    depth++;
+
+    file << indent(depth) << "<id>" << root->id << "</id>\n";
+    file << indent(depth) << "<content>" << root->symbol << "</content>\n";
+    file << indent(depth) << "<children>\n";
+    depth++;
     for (auto i = root->children.begin(); i != root->children.end(); ++i) {
-        file << "<child>" << (*i)->id << "</child>\n";
+        file << indent(depth) << "<child>" << (*i)->id << "</child>\n";
+
     }
-    file << "</children>\n";
-    file << "</root>\n";
+    depth--;
+    file << indent(depth) << "</children>\n";
+    depth--;
+    file << indent(depth) << "</root>\n";
 
     for (auto i = root->children.begin(); i != root->children.end(); ++i) {
-        xmlHelper("node", *i, file, root->id);
+        xmlHelper("node", *i, file, root->id,depth);
     }
 
-    file << "</tree>\n";
+    depth--;
+    file << indent(depth) << "</tree>\n";
     file.close();
 }
 
-void TreeBuilder::xmlHelper(string tag, Node* node, ofstream& file, int parent) {
-    file << "<" << tag << ">\n";
-    file << "<id>" << node->id << "</id>\n";
-    file << "<content>" << node->symbol << "</content>\n";
-    file << "<parent>" << parent << "</parent>\n";
+void TreeBuilder::xmlHelper(string tag, Node* node, ofstream& file, int parent, int depth) {
+    file << indent(depth) << "<" << tag << ">\n";
+    depth++;
+
+    file << indent(depth) << "<id>" << node->id << "</id>\n";
+    file << indent(depth) << "<content>" << node->symbol << "</content>\n";
+    file << indent(depth) << "<parent>" << parent << "</parent>\n";
 
     if (!node->children.empty()) { // inner
-        file << "<children>\n";
-
+        file << indent(depth) << "<children>\n";
+        depth++;
         for (auto i = node->children.begin(); i != node->children.end(); ++i) {
-            file << "<child>" << (*i)->id << "</child>\n";
+            file << indent(depth) << "<child>" << (*i)->id << "</child>\n";
         }
-
-        file << "</children>\n";
+        depth--;
+        file << indent(depth) << "</children>\n";
     }
 
-    file << "</" << tag << ">\n";
+    depth--;
+    file << indent(depth) << "</" << tag << ">\n";
 
     for (auto i = node->children.begin(); i != node->children.end(); ++i) {
-        xmlHelper("node", *i, file, node->id);
+        xmlHelper("node", *i, file, node->id, depth);
     }
 }
 
@@ -81,4 +94,12 @@ void TreeBuilder::reduceNode(NonTerminal nt, int number_to_pop) {
 
     Node* parent = createNode(NonTerminalToName(nt), children);
     node_stack.push(parent);
+}
+
+Node* TreeBuilder::getRoot()const {
+    return this->node_stack.top();
+}
+
+string TreeBuilder::indent(int depth) {
+    return string(depth, '\t');
 }

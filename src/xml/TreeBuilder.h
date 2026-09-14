@@ -7,6 +7,7 @@
 #include <stack>
 #include <optional>
 #include <map>
+#include <iostream>
 
 #include "token.h"
 #include "ProductionRules.h"
@@ -38,11 +39,10 @@ struct Node {
 class TreeBuilder {
 private:
     int node_id;
-    Node* root;
     stack<Node*> node_stack;
 
-    void xmlHelper(string tag, Node* node, ofstream& file, int parent);
-
+    void xmlHelper(string tag, Node* node, ofstream& file, int parent, int depth);
+    string indent(int depth);
 public:
     TreeBuilder();
     ~TreeBuilder();
@@ -50,6 +50,7 @@ public:
     void writeXML(Node* root);
     void shiftNode(Token token);
     void reduceNode(NonTerminal nt, int number_to_pop);
+    Node* getRoot()const;
 };
 
 

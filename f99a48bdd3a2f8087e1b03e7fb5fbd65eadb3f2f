@@ -1,0 +1,32 @@
+src/Parser/ParserVisitor/parser.visitor.h
+  s_4c781a42b1994b::t_6033216b92f374 21
+  s_4c781a42b1994b::t_08c6197893d6fe 30
+src/Parser/Parser/Parser.cpp
+  s_4c781a42b1994b::t_6633ebcb4efbd6 11,15
+src/Parser/ParserVisitor/parser.visitor.cpp
+  h_cf6208e37032c0 8-10,24-28,34
+  s_4c781a42b1994b::t_1e52e16b8dd257 13-14,29,49,54,64,67,76
+src/Parser/Parser/Parser.h
+  s_4c781a42b1994b::t_fb88dec1daec22 25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "f99a48bdd3a2f8087e1b03e7fb5fbd65eadb3f2f",
+  "prompts": {},
+  "humans": {
+    "h_cf6208e37032c0": {
+      "author": "JaredWilliams-1 <jaredluke3@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_4c781a42b1994b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6025954c-3303-4759-8ea3-d8c1d53b71d2",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": null
+    }
+  }
+}

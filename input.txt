@@ -1,1 +1,1 @@
-: num #calculate ( #x ) { : : #result = add ( #x 10 ) ; print "the-result-is" ; print ( #result ) ; return ( #result ) } : $
+:  #calculate ( #x ) { : : #result = add ( #x 10 ) ; print "the-result-is" ; print ( #result ) ; return ( #result ) } : $

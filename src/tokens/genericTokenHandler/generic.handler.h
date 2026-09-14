@@ -11,7 +11,7 @@ class GenericHandler : public TokenHandler {
 
 public:
   GenericHandler(TokenType token) : TokenHandler() {
-    cout << "Created a handler for " << patternFor(token) << endl;
+//    cout << "Created a handler for " << patternFor(token) << endl;
 
     this->setMatchString(patternFor(token)).setTokenType(token);
   }

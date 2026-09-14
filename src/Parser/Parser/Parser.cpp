@@ -2,7 +2,8 @@
 #include "createParseTable.h"
 #include "parser.visitor.h"
 #include "state.enum.h"
-
+#include <iostream>
+#include <stdexcept>
 // adds the parser
 Parser::Parser() {
   this->table = createParseTable();
@@ -16,16 +17,22 @@ Parser::Parser() {
   ); // does not manage memory these are just references
 }
 
-auto Parser::ParseTokens(vector<Token*> tokens) {
+bool Parser::ParseTokens(vector<Token *> tokens) {
 
-  auto accept = visitor->parseTokens(tokens);
+  try {
+    auto accept = visitor->parseTokens(tokens);
 
-  if (accept) {
-    // return visitor . get composite tree
+    if (accept) {
+      // return visitor . get composite tree
+    } else {
+      // throw exeption ? idk
+    }
+  } catch (runtime_error e) {
+    std::cout << e.what() << std::endl;
+    return false;
   }
-  else {
-    // throw exeption ? idk
-  }
+
+  return true;
 }
 
 // memory management

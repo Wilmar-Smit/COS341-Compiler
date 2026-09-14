@@ -1,15 +1,18 @@
 #include "parser.visitor.h"
+#include "../../tokens/tokenTable.h"
 #include "ProductionRules.h"
 #include "parser.actions.h"
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
 
+using namespace std;
+
 ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
-                           std::stack<ParserStates> &stack,
+                           std::stack<ParserStates> &stateStack,
                           TreeBuilder& tb)
-    : table(table), stateStack(stack), gotoTable(gotoTable), xml(tb) {
+    : table(table), stateStack(stateStack), gotoTable(gotoTable), xml(tb) {
   // keeps a reference to the same tables and stack as the parser
 }
 
@@ -21,12 +24,17 @@ bool ParseVisitor::parseTokens(vector<Token *> tokens)
     while (this->tokenIndex < tokens.size())
     {
 
+      if (tokens[this->tokenIndex]->getCode() == " "){
+        this->tokenIndex++;
+        continue;
+      }
+
       this->StateIndex = static_cast<int>(stateStack.top());
       int tableTokenIndex =
           static_cast<int>(tokens[this->tokenIndex]->getType());
 
       auto action = table[StateIndex][tableTokenIndex];
-
+      
       action->AcceptVisitor(this);
     }
   }
@@ -80,6 +88,7 @@ void ParseVisitor::visit(ErrorAction *action) {
 
   std::stringstream ss;
   ss << "Parsing failed: Unexpected token of type " << tableTokenIndex
+     << " Being: " << patternFor(tokens[tokenIndex]->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << ".";
 

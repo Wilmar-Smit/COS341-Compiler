@@ -1,0 +1,44 @@
+0 SPL_PROG' -> SPL_PROG
+1 SPL_PROG -> P $
+2 P -> V_DECL : F_DECL : ALGO
+3 V_DECL -> EPSILON
+4 V_DECL -> NAME V_DECL
+5 F_DECL -> EPSILON
+6 F_DECL -> F_TYPE F_DECL
+7 F_TYPE -> void NAME ( V_DECL ) { P return }
+8 F_TYPE -> num NAME ( V_DECL ) { P return ( TERM ) }
+9 ALGO -> EPSILON
+10 ALGO -> INSTR ; ALGO
+11 OUTP -> ( TERM )
+12 OUTP -> STRING
+13 INSTR -> print OUTP
+14 INSTR -> nop
+15 INSTR -> comment STRING
+16 INSTR -> ASSIGN
+17 INSTR -> BRANCH
+18 INSTR -> LOOP
+19 INSTR -> CALL
+20 CALL -> NAME ( INPUT )
+21 INPUT -> EPSILON
+22 INPUT -> TERM INPUT
+23 ASSIGN -> NAME = TERM
+24 TERM -> NAME
+25 TERM -> NUM
+26 TERM -> CALL
+27 TERM -> mod ( TERM TERM )
+28 TERM -> add ( TERM TERM )
+29 TERM -> sub ( TERM TERM )
+30 TERM -> mul ( TERM TERM )
+31 TERM -> div ( TERM TERM )
+32 TERM -> neg ( TERM )
+33 BRANCH -> if BOOL then { ALGO } else { ALGO }
+34 BOOL -> not ( BOOL )
+35 BOOL -> and ( BOOL BOOL )
+36 BOOL -> or ( BOOL BOOL )
+37 BOOL -> eq ( TERM TERM )
+38 BOOL -> larger ( TERM TERM )
+39 BOOL -> lesser ( TERM TERM )
+40 LOOP -> COND BOOL do { ALGO }
+41 LOOP -> do { ALGO } COND BOOL
+42 COND -> while
+43 COND -> until

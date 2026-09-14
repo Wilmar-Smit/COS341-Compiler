@@ -40,7 +40,7 @@ std::string readFileToString(const std::string &filePath) {
     }
   }
 
-  return result+"$";
+  return result; // removed the +"$" since that is expected in the grammar so the code should have it
 }
 
 #endif

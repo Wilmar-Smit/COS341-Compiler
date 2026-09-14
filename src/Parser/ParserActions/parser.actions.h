@@ -19,6 +19,9 @@ class ShiftAction : public ParserAction {
 
   ParserStates state;
 
+private:
+  ProductionRule rule;
+
 public:
   // simple just stores the next state to put onto the stack
   ShiftAction(ParserStates state) : state(state) {}
@@ -35,7 +38,7 @@ private:
   ProductionRule rule;
 
 public:
-  ReduceAction(ProductionRule rule) {}
+  ReduceAction(ProductionRule rule) : rule(rule) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 

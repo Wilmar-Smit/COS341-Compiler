@@ -1,7 +1,7 @@
 #ifndef PARSE_VISITOR_H
 #define PARSE_VISITOR_H
 
-#include "token.h"
+#include "../../tokens/token.h"
 #include <stack>
 #include <vector>
 using std::stack;
@@ -30,7 +30,7 @@ private:
 public:
   ParseVisitor(vector<vector<ParserAction*>>& table,
     vector<vector<ParserAction*>>& gotoTable,
-    std::stack<ParserStates>& stack,
+    std::stack<ParserStates>& stateStack,
     TreeBuilder& tb
   );
 

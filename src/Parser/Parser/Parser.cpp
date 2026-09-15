@@ -9,10 +9,12 @@ Parser::Parser() {
   this->table = createParseTable();
   this->gotoTable = createGotoTable();
   this->stateStack.push(ParserStates::S0); // S0 pushed on
-
+  this->xml = TreeBuilder();
   this->visitor = new ParseVisitor(
-      table, gotoTable,
-      stateStack); // does not manage memory these are just references
+    table, gotoTable,
+    stateStack,
+    xml
+  ); // does not manage memory these are just references
 }
 
 bool Parser::ParseTokens(vector<Token *> tokens) {

@@ -67,6 +67,7 @@ int main() {
   // ------------ Run input  MANAGEMENT ------------
   
   Parser parse;
+  tokenList.push_back(new Token("$", TokenType::DOLLAR_EOF));
   parse.ParseTokens(tokenList);
   
   // ------------ MEMORY MANAGEMENT ------------

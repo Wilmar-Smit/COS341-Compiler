@@ -7,6 +7,8 @@
 using std::stack;
 using std::vector;
 #include "../StateEnums/state.enum.h"
+#include "TreeBuilder.h"
+
 class ParserAction;
 class ReduceAction;
 class AcceptAction;
@@ -16,27 +18,30 @@ class ErrorAction;
 
 class ParseVisitor {
 private:
-  vector<vector<ParserAction *>> &table;
-  vector<vector<ParserAction *>> &gotoTable;
-  stack<ParserStates> &stateStack;
-  vector<Token *> tokens;
+  vector<vector<ParserAction*>>& table;
+  vector<vector<ParserAction*>>& gotoTable;
+  stack<ParserStates>& stateStack;
+  vector<Token*> tokens;
   int tokenIndex = 0;
   int StateIndex = 0;
   bool hitAcceptState = false;
+  TreeBuilder xml;
 
 public:
-  ParseVisitor(vector<vector<ParserAction *>> &table,
-               vector<vector<ParserAction *>> &gotoTable,
-               std::stack<ParserStates> &stateStack);
+  ParseVisitor(vector<vector<ParserAction*>>& table,
+    vector<vector<ParserAction*>>& gotoTable,
+    std::stack<ParserStates>& stateStack,
+    TreeBuilder& tb
+  );
 
-  bool parseTokens(vector<Token *> tokens);
+  bool parseTokens(vector<Token*> tokens);
 
-  virtual void visit(ParserAction *action);
-  virtual void visit(ReduceAction *action);
-  virtual void visit(ShiftAction *action);
-  virtual void visit(GotoAction *action);
-  virtual void visit(AcceptAction *action);
-  virtual void visit(ErrorAction *action);
+  virtual void visit(ParserAction* action);
+  virtual void visit(ReduceAction* action);
+  virtual void visit(ShiftAction* action);
+  virtual void visit(GotoAction* action);
+  virtual void visit(AcceptAction* action);
+  virtual void visit(ErrorAction* action);
 };
 
 #endif

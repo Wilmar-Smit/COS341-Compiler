@@ -4,11 +4,15 @@
 #include "../Parser/ProductionRules.h"
 #include "../ParserVisitor/parser.visitor.h"
 #include "state.enum.h"
+
+enum class actionType { UNSET, SHIFT, REDUCE, GOTO, ERROR, ACCEPT };
+
 class ParserAction {
   friend class ParseVisitor;
 
 public:
-  ParserAction() {}
+  const actionType type = actionType::UNSET;
+  ParserAction(actionType type) : type(type) {}
   virtual ~ParserAction() {}
   virtual void AcceptVisitor(ParseVisitor *vis) = 0;
 };
@@ -24,7 +28,8 @@ private:
 
 public:
   // simple just stores the next state to put onto the stack
-  ShiftAction(ParserStates state) : state(state) {}
+  ShiftAction(ParserStates state)
+      : ParserAction(actionType::SHIFT), state(state) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
@@ -38,7 +43,8 @@ private:
   ProductionRule rule;
 
 public:
-  ReduceAction(ProductionRule rule) : rule(rule) {}
+  ReduceAction(ProductionRule rule)
+      : ParserAction(actionType::REDUCE), rule(rule) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
@@ -47,7 +53,7 @@ class ErrorAction : public ParserAction {
   friend class ParseVisitor;
 
 public:
-  ErrorAction() {}
+  ErrorAction() : ParserAction(actionType::ERROR) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
@@ -56,7 +62,7 @@ class AcceptAction : public ParserAction {
   friend class ParseVisitor;
 
 public:
-  AcceptAction() {}
+  AcceptAction() : ParserAction(actionType::ACCEPT) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 
@@ -66,7 +72,8 @@ class GotoAction : public ParserAction {
   ParserStates state;
 
 public:
-  GotoAction(ParserStates state) : state(state) {}
+  GotoAction(ParserStates state)
+      : ParserAction(actionType::GOTO), state(state) {}
   virtual void AcceptVisitor(ParseVisitor *vis);
 };
 

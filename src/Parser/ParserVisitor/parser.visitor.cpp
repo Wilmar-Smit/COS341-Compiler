@@ -7,6 +7,9 @@
 #include <stdexcept>
 
 using namespace std;
+const std::string GREEN = "\033[32m";
+const std::string RED = "\033[31m";
+const std::string RESET = "\033[0m";
 
 ParseVisitor::ParseVisitor(vector<vector<ParserAction*>>& table,
   vector<vector<ParserAction*>>& gotoTable,
@@ -93,12 +96,37 @@ void ParseVisitor::visit(ReduceAction* action)
 void ParseVisitor::visit(ErrorAction* action) {
   int stateIndex = static_cast<int>(stateStack.top());
   int tableTokenIndex = static_cast<int>(tokens[tokenIndex]->getType());
+  std::stringstream possibleTokens;
+  possibleTokens << GREEN << "\nPossible expressions";
+  for (int rowTokenIdx = 0; rowTokenIdx < table[stateIndex].size();
+       rowTokenIdx++) {
+
+    auto action = table[stateIndex][rowTokenIdx];
+
+    if (!action || action->type == actionType::ERROR) {
+      continue;
+    }
+
+    auto expectedTokenType = static_cast<TokenType>(rowTokenIdx);
+
+    switch (action->type) {
+    case actionType::SHIFT:
+    case actionType::REDUCE:
+    case actionType::ACCEPT:
+      possibleTokens << "[ " << patternFor(expectedTokenType) << " ]";
+      break;
+    default:
+      break;
+    }
+  }
 
   std::stringstream ss;
-  ss << "Parsing failed: Unexpected token of type " << tableTokenIndex
-    << " Being: " << patternFor(tokens[tokenIndex]->getType())
-    << " encountered in parser state " << stateIndex << " at token index "
-    << tokenIndex << ".";
+  ss << RED << "Parsing failed: Unexpected token of type " << tableTokenIndex
+     << " Being: " << patternFor(tokens[tokenIndex]->getType())
+     << " encountered in parser state " << stateIndex << " at token index "
+     << tokenIndex << "." << RESET;
+
+  ss << possibleTokens.str() << RESET;
 
   throw std::runtime_error(ss.str());
 }

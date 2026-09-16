@@ -1,7 +1,7 @@
 BUILD_DIR = build
 EXEC = compiler
 
-.PHONY: all build run clean re compile_commands valgrind
+.PHONY: all build run clean re compile_commands valgrind test
 
 all: build
 
@@ -21,6 +21,13 @@ compile_commands:
 
 run: build
 	@./$(BUILD_DIR)/$(EXEC)
+
+test: compile_commands
+	@if [ ! -d "$(BUILD_DIR)" ]; then \
+		cmake -B $(BUILD_DIR) -S . -G Ninja -DCMAKE_CXX_COMPILER=clang++; \
+	fi
+	@cmake --build $(BUILD_DIR) --target compiler_tests
+	@cd $(BUILD_DIR) && ctest --output-on-failure
 
 compile:
 	@./$(BUILD_DIR)/$(EXEC)

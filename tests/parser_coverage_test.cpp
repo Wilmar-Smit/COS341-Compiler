@@ -1,17 +1,8 @@
-// Grammar coverage + tree.xml structure tests.
+// Grammar coverage + tree.xml structure tests, run through the real
+// pipeline (lex -> SLR parse -> tree.xml write) and asserted with pugixml.
 //
-// Every fragment here is run through the *real* pipeline (lex -> SLR parse
-// -> tree.xml write, via ParseVisitor - see test_helpers.h for why not
-// Parser::ParseTokens) and then the resulting tree.xml is parsed with
-// pugixml and asserted on directly. Reaching AcceptAction is the first
-// assertion, never the only one.
-//
-// Token syntax (spacing, NAME/NUM shape) is taken from the checked-in
-// input.txt fixture, e.g.:
-//   ": num #calculate ( #x ) { : : #result = add ( #x 10 ) ; ... } : $"
-// NAME matches `#[0-9a-z]*`, NUM matches plain (optionally signed/decimal)
-// numerals, every token - including every "(" ")" "{" "}" ";" ":" "=" - is
-// its own space-separated word.
+// Token syntax matches input.txt: every token is its own space-separated
+// word, e.g. "( #x )" not "(#x)".
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -23,10 +14,7 @@
 
 namespace {
 
-// Structural well-formedness shared by every fragment below:
-//  - every node has a non-empty, unique <id> and non-empty <content>
-//  - exactly one node has no <parent> (the root)
-//  - every other node's <parent> refers to a real <id> in the same doc
+// Checks: unique non-empty ids, exactly one root, every parent resolves.
 void assertWellFormedTree(const std::vector<XmlNodeInfo> &nodes) {
   REQUIRE_FALSE(nodes.empty());
 
@@ -52,10 +40,7 @@ void assertWellFormedTree(const std::vector<XmlNodeInfo> &nodes) {
   }
 }
 
-// Runs `source`, asserts it reaches AcceptAction (reporting the parser's
-// own diagnostic on failure instead of a bare pass/fail bit), asserts the
-// resulting tree.xml is structurally well-formed, and hands back the
-// parsed node list for fragment-specific assertions.
+// Runs `source`, asserts accept + well-formed tree.xml, returns nodes.
 std::vector<XmlNodeInfo> acceptAndLoad(const std::string &source) {
   PipelineResult result = runPipeline(source);
 
@@ -70,19 +55,8 @@ std::vector<XmlNodeInfo> acceptAndLoad(const std::string &source) {
 }
 
 // Asserts a node with the given nonterminal content exists and was
-// produced by an epsilon reduction.
-//
-// NOTE ON ACTUAL BEHAVIOUR: TreeBuilder::xmlHelper only emits a <children>
-// element for a non-root node when its children vector is non-empty
-// (src/xml/TreeBuilder.cpp: `if (!node->children.empty()) { ... }`). For a
-// genuinely epsilon-reduced node (0 children), that means <children> is
-// omitted entirely, not emitted-but-empty. This was verified by hand
-// against a real run before writing this assertion. So "epsilon node
-// exists but isn't silently dropped from the tree" is asserted here as
-// "the node is present in the document, with hasChildrenTag == false" -
-// if a future TreeBuilder change starts emitting an empty <children/> tag
-// for such nodes, this assertion should flip to hasChildrenTag == true
-// with an empty children vector.
+// produced by an epsilon reduction (present, no <children> tag - see
+// TreeBuilder::xmlHelper, which omits <children> entirely when empty).
 void assertEpsilonNodePresent(const std::vector<XmlNodeInfo> &nodes,
                                const std::string &nonterminal) {
   const XmlNodeInfo *node = nullptr;
@@ -116,8 +90,8 @@ TEST_CASE("multiple variable declarations (V_DECL recursion)",
   int vdeclCount = 0;
   for (auto &n : nodes)
     if (n.content == "V_DECL") vdeclCount++;
-  // 3 names -> 3 recursive V_DECL wraps + 1 epsilon base case = 4.
-  INFO("expected 4 V_DECL nodes (3 recursive wraps + epsilon base)");
+  // 3 names -> 3 recursive wraps + 1 epsilon base = 4.
+  INFO("expected 4 V_DECL nodes");
   REQUIRE(vdeclCount == 4);
 
   assertEpsilonNodePresent(nodes, "V_DECL");
@@ -151,7 +125,7 @@ TEST_CASE("num-type function declaration with return(TERM)",
 
   const XmlNodeInfo *returnedTerm = findByContent(nodes, "0");
   REQUIRE(returnedTerm != nullptr);
-  INFO("the returned TERM should be wrapped in a TERM node");
+  INFO("expected returned value wrapped in a TERM node");
   REQUIRE(countAncestorsWithContent(nodes, returnedTerm->id, "TERM") >= 1);
 }
 
@@ -166,13 +140,9 @@ TEST_CASE("multiple function declarations (F_DECL recursion)",
     if (n.content == "F_DECL") fDeclCount++;
     if (n.content == "F_TYPE") fTypeCount++;
   }
-  // Outer F_DECL chain: 2 recursive wraps (one per function) + 1 epsilon
-  // base = 3. Each function body is itself a full P (V_DECL : F_DECL :
-  // ALGO), so each of the 2 function bodies here contributes its own
-  // epsilon F_DECL too: 3 + 2 = 5 total.
-  INFO("expected 2 F_TYPE nodes (one per function) and 5 F_DECL nodes "
-       << "(outer: 2 recursive wraps + epsilon base; plus one epsilon "
-          "F_DECL per function body's own inner P)");
+  // Outer: 2 recursive wraps + 1 epsilon base = 3, plus one epsilon
+  // F_DECL per function body's own inner P: 3 + 2 = 5 total.
+  INFO("expected 2 F_TYPE nodes and 5 F_DECL nodes");
   REQUIRE(fTypeCount == 2);
   REQUIRE(fDeclCount == 5);
   assertEpsilonNodePresent(nodes, "F_DECL");
@@ -201,8 +171,8 @@ TEST_CASE("CALL with 2+ arguments (INPUT recursion)",
   int inputCount = 0;
   for (auto &n : nodes)
     if (n.content == "INPUT") inputCount++;
-  // 2 terms -> 2 recursive INPUT wraps + 1 epsilon base = 3.
-  INFO("expected 3 INPUT nodes (2 recursive wraps + epsilon base)");
+  // 2 terms -> 2 recursive wraps + 1 epsilon base = 3.
+  INFO("expected 3 INPUT nodes");
   REQUIRE(inputCount == 3);
 }
 
@@ -217,9 +187,7 @@ TEST_CASE("nested arithmetic at least 2 levels deep",
 
   const XmlNodeInfo *innerLeaf = findByContent(nodes, "11");
   REQUIRE(innerLeaf != nullptr);
-  INFO("'11' should sit inside TERM(add(...)) nested inside the outer "
-       "TERM(mod(...)) - i.e. at least 2 TERM nodes on its ancestor chain, "
-       "not a flattened single TERM");
+  INFO("expected at least 2 nested TERM ancestors, not flattened");
   REQUIRE(countAncestorsWithContent(nodes, innerLeaf->id, "TERM") >= 2);
 }
 
@@ -238,9 +206,7 @@ TEST_CASE("nested boolean at least 2 levels deep",
 
   const XmlNodeInfo *deepLeaf = findByContent(nodes, "3");
   REQUIRE(deepLeaf != nullptr);
-  INFO("'3' (lesser's operand) should sit under BOOL(lesser) nested inside "
-       "BOOL(or) inside BOOL(and) inside BOOL(not) - at least 3 BOOL "
-       "ancestors, not a flattened single BOOL");
+  INFO("expected at least 3 nested BOOL ancestors, not flattened");
   REQUIRE(countAncestorsWithContent(nodes, deepLeaf->id, "BOOL") >= 3);
 }
 

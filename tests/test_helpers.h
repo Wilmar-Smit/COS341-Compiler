@@ -1,10 +1,7 @@
 #ifndef TEST_HELPERS_H
 #define TEST_HELPERS_H
 
-// Shared plumbing for the coverage/table tests: driving the real lexer +
-// SLR parser end to end, and reading back the tree.xml it writes with
-// pugixml so assertions run against actual output structure, not just
-// "did it accept".
+// Shared plumbing: drives the real lexer + parser and reads back tree.xml.
 
 #include <algorithm>
 #include <filesystem>
@@ -20,65 +17,32 @@
 #include "token.h"
 #include "tokenHandler.h"
 
-// NOTE: generic.handler.h's createChain() is a free function defined
-// (not declared) in the header, with no `inline` keyword - fine for
-// main.cpp, which is the header's only #include site in production code,
-// but it means any second .cpp that includes it triggers an ODR
-// "multiple definition" link error. Rather than add `inline` to
-// production code, tests/test_helpers.cpp is the single translation unit
-// that includes generic.handler.h; everything here only sees the
-// declarations below and links against that one definition.
+// createChain() isn't `inline`, so only test_helpers.cpp includes
+// generic.handler.h directly - avoids an ODR link error elsewhere.
 
 // ---------------------------------------------------------------------
 // Running the pipeline
 // ---------------------------------------------------------------------
 //
-// NOTE: this deliberately drives ParseVisitor directly instead of going
-// through Parser::ParseTokens. Parser::ParseTokens (src/Parser/Parser/
-// Parser.cpp) reads:
-//
-//   auto accept = visitor->parseTokens(tokens);
-//   if (accept) { /* return visitor . get composite tree */ }
-//   else        { /* throw exeption ? idk */ }
-//   ...
-//   return true;
-//
-// Both branches are no-ops and the function unconditionally returns
-// `true` unless something throws all the way out of the try block - which
-// never happens, because ParseVisitor::parseTokens already catches its own
-// runtime_error internally and returns false. So Parser::ParseTokens's
-// return value cannot currently be trusted to reflect whether parsing
-// actually succeeded. This is a real bug in application code, but every
-// test below can be written without touching it by asking ParseVisitor
-// directly, so it is reported (see the accompanying writeup) rather than
-// patched.
+// Drives ParseVisitor directly instead of Parser::ParseTokens, whose
+// return value can't be trusted (always returns true - see PR writeup).
 
 struct PipelineResult {
   bool accepted = false;
-  std::string diagnostics;  // whatever ParseVisitor printed (e.g. the
-                             // ErrorAction message) while parsing
+  std::string diagnostics;  // whatever ParseVisitor printed while parsing
   bool xmlWritten = false;
 };
 
-// Thin wrapper around generic.handler.h's createChain(), so test files
-// never need to include that header directly (see the ODR note above).
-// Defined once, in test_helpers.cpp.
+// Wraps generic.handler.h's createChain(). Defined in test_helpers.cpp.
 TokenHandler *newHandlerChain();
 
-// Mirrors main.cpp's tokenize step exactly (including appending a
-// trailing DOLLAR_EOF token unconditionally, whether or not the source
-// already ended in a literal "$"). Defined once, in test_helpers.cpp.
+// Mirrors main.cpp's tokenize step, including the trailing DOLLAR_EOF
+// append. Defined in test_helpers.cpp.
 std::vector<Token *> tokenizeAll(const std::string &source);
 
 // Runs source through lex -> SLR parse -> (on accept) tree.xml write,
-// exactly like main.cpp does, but returns the *real* accept/reject
-// signal from ParseVisitor and captures whatever it printed. Defined
-// once, in test_helpers.cpp.
-//
-// Assumes the current working directory contains ProductionRules.txt,
-// SLR_ACTION_Table.csv and SLR_GOTO_Table.csv (the CMake test target
-// points ctest at a scratch copy of these - see CMakeLists.txt - so a
-// fresh tree.xml written here never touches the repo's checked-in one).
+// like main.cpp, but returns the real accept/reject signal. Defined in
+// test_helpers.cpp.
 PipelineResult runPipeline(const std::string &source);
 
 // ---------------------------------------------------------------------
@@ -146,10 +110,8 @@ inline std::map<std::string, XmlNodeInfo> indexById(
   return byId;
 }
 
-// Counts how many ancestors of (and including) the node with id `startId`
-// have the given content, walking parent links up to the root. Used to
-// verify actual nesting depth (e.g. TERM-inside-TERM) rather than trusting
-// a flat node count.
+// Counts ancestors (including startId) with the given content, to verify
+// nesting depth rather than trusting a flat node count.
 inline int countAncestorsWithContent(const std::vector<XmlNodeInfo> &nodes,
                                       const std::string &startId,
                                       const std::string &content) {

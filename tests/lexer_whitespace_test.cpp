@@ -1,19 +1,6 @@
-// Lexer whitespace tests - TokenHandler / createChain() driven directly,
-// bypassing the parser entirely.
-//
-// Blank-space handling lives in two different places in this codebase:
-//   1. src/fileReader/filereader.h (readFileToString) normalizes '\n' and
-//      '\r' to a literal ' ' (ASCII 32) and collapses runs of spaces,
-//      before the lexer ever sees the text.
-//   2. src/tokens/tokenHandler/tokenHandler.cpp / tokenTable.h implement
-//      blank_space in TokenHandler itself purely as the literal ASCII 32
-//      space character (TokenType::SPACE's pattern is R"( )" - nothing
-//      else matches it).
-//
-// These tests call TokenHandler directly, so only (2) is in effect. That
-// means "does the lexer itself, independent of the file-reading
-// preprocessing step, treat something other than a literal space as
-// blank_space" gets a real answer instead of an assumption.
+// Lexer whitespace tests - TokenHandler driven directly, bypassing the
+// parser. Only TokenHandler's own SPACE handling (ASCII 32 literal) is in
+// effect here; filereader.h's \n/\r normalization happens upstream.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -29,9 +16,7 @@ struct ExpectedToken {
   std::string code;
 };
 
-// Tokenizes `input` directly against TokenHandler/createChain(), then
-// strips SPACE-type tokens (mirroring what ParseVisitor does before
-// consulting the parse table) and returns what's left.
+// Tokenizes `input` and strips SPACE tokens, like ParseVisitor does.
 std::vector<ExpectedToken> tokenizeAndStripSpaces(const std::string &input) {
   std::vector<Token *> raw = tokenizeAll(input);
   std::vector<ExpectedToken> filtered;
@@ -113,18 +98,9 @@ TEST_CASE(
     "a tab character is NOT recognised as blank_space by TokenHandler "
     "itself",
     "[lexer][whitespace][gap]") {
-  // GAP: TokenType::SPACE's pattern (tokenTable.h) is the literal ASCII 32
-  // space character only. There is no ASCII 9 (tab) handling anywhere in
-  // TokenHandler/tokenTable - a tab between two otherwise-valid tokens
-  // makes the whole run-of-non-space-characters fail every handler's
-  // regex_match and TokenHandler::handle falls through to
-  // `throw std::runtime_error("Unexpected token symbol: ...")`.
-  // Documenting the actual (failing) behaviour here rather than silently
-  // assuming tabs work.
+  // GAP: TokenType::SPACE only matches ASCII 32; no tab handling exists.
   TokenHandler *chain = newHandlerChain();
-  INFO("expected: throws, because no TokenType pattern matches a run "
-       "containing a raw tab character, and TokenHandler has no "
-       "tab-specific handling");
+  INFO("expected: throws, no TokenType pattern matches a raw tab");
   REQUIRE_THROWS_AS(chain->handle("(\t)"), std::runtime_error);
   delete chain;
 }
@@ -133,19 +109,9 @@ TEST_CASE(
     "a raw carriage return is NOT recognised as blank_space by "
     "TokenHandler itself (only ASCII 32 is)",
     "[lexer][whitespace][gap]") {
-  // GAP: the project spec (per the practical brief) allows blank_space to
-  // be ASCII 32 (space) or ASCII 13 (carriage return). Carriage-return
-  // handling does exist in this codebase, but only as a preprocessing
-  // step in src/fileReader/filereader.h::readFileToString, which rewrites
-  // '\r'/'\n' to ' ' *before* the lexer ever runs. TokenHandler itself
-  // (tokenTable.h's SPACE pattern is literal ASCII 32 only) has no
-  // handling for '\r' at all. Fed a raw '\r' directly - i.e. any caller
-  // that doesn't route input through readFileToString first - tokenizing
-  // fails the same way it does for a tab.
+  // GAP: \r is normalized upstream in filereader.h, not by TokenHandler.
   TokenHandler *chain = newHandlerChain();
-  INFO("expected: throws, because TokenHandler has no ASCII-13 handling of "
-       "its own; that only exists upstream in filereader.h's "
-       "readFileToString, which this test deliberately bypasses");
+  INFO("expected: throws, TokenHandler has no ASCII-13 handling");
   REQUIRE_THROWS_AS(chain->handle("(\r)"), std::runtime_error);
   delete chain;
 }

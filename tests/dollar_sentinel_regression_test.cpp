@@ -1,9 +1,5 @@
-// Regression test for the double-DOLLAR_EOF finding (see PR description):
-// main.cpp always appends a second Token("$", DOLLAR_EOF), and that append
-// turns out to be load-bearing, not redundant - removing/conditionalizing
-// it breaks every parse, because the final "SPL_PROG' -> SPL_PROG" reduce
-// and the ACCEPT after it both need a lookahead token without consuming
-// one.
+// Regression test: main.cpp's unconditional appended DOLLAR_EOF is
+// load-bearing, not redundant - see PR description.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -21,14 +17,11 @@
 
 namespace {
 
-// Same minimal all-epsilon fixture as parser_coverage_test.cpp's
-// "minimal empty program" test.
+// Same minimal all-epsilon fixture as parser_coverage_test.cpp.
 const std::string kMinimalFixture = ": : $";
 
-// runPipeline() in test_helpers.h always appends exactly one DOLLAR_EOF,
-// so it can't produce the "only one, nothing appended" case below. This
-// takes a pre-built token vector instead, duplicating runPipeline()'s few
-// lines rather than changing shared test infra for one test file.
+// runPipeline() always appends a DOLLAR_EOF, so this takes a pre-built
+// token vector instead to produce the "only one, nothing appended" case.
 PipelineResult runPipelineFromTokens(std::vector<Token *> tokenList) {
   PipelineResult result;
 
@@ -62,7 +55,7 @@ PipelineResult runPipelineFromTokens(std::vector<Token *> tokenList) {
   return result;
 }
 
-// Skips trailing SPACE tokens, same as ParseVisitor does.
+// Skips trailing SPACE tokens, like ParseVisitor does.
 int countTrailingDollarEof(const std::vector<Token *> &tokens) {
   int count = 0;
   for (auto it = tokens.rbegin(); it != tokens.rend(); ++it) {
@@ -85,7 +78,7 @@ TEST_CASE(
   std::vector<Token *> tokens = tokenizeAll(kMinimalFixture);
   REQUIRE(countTrailingDollarEof(tokens) == 1);
 
-  // mirrors main.cpp's unconditional append
+  // Mirrors main.cpp's unconditional append.
   tokens.push_back(new Token("$", TokenType::DOLLAR_EOF));
   REQUIRE(countTrailingDollarEof(tokens) == 2);
 
@@ -96,11 +89,10 @@ TEST_CASE(
   REQUIRE(result.xmlWritten);
 }
 
-// EXPECTED to fail acceptance a single
-// trailing DOLLAR_EOF should never reach AcceptAction with today's driver
-// loop (see file header / PR description). If this starts passing without
-// a deliberate fix to that loop, something else changed and needs its own
-// look - it isn't evidence the double-append is safe to remove.
+// EXPECTED-TO-FAIL-ACCEPT: failing/not accepting here is CORRECT, not a
+// bug - today's driver loop never reaches AcceptAction with only one
+// DOLLAR_EOF (see PR description). If this starts passing, investigate;
+// it is not evidence the double-append is safe to remove.
 TEST_CASE("single trailing DOLLAR_EOF does not reach AcceptAction",
           "[regression][dollar-sentinel][known-gap]") {
   std::vector<Token *> tokens = tokenizeAll(kMinimalFixture);

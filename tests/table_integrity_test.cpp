@@ -1,30 +1,9 @@
-// Table integrity tests.
-//
-// These exercise src/fileReader/parseTableReader.h (ParseTableReader /
-// ActionTableReader / GotoTableReader) against the checked-in
+// Table integrity tests: parseTableReader.h against the checked-in
 // SLR_ACTION_Table.csv, SLR_GOTO_Table.csv and ProductionRules.txt.
 //
-// A couple of checks (header-column mapping) call the free functions
-// `terminalFromSymbol` / `nonTerminalFromName` that parseTableReader.h
-// already exposes at file scope - no production code changes needed.
-//
-// The "every ReduceAction's referenced production index is in range"
-// check can't be done by inspecting a built ReduceAction directly:
-// ReduceAction::rule is private with only ParseVisitor as a friend, so
-// there is no public way to read back which production a given cell
-// refers to. Two things stand in for it instead, without modifying
-// production code:
-//   1. ActionTableReader::create() calls ruleTable.at(value) for every
-//      "rN" cell - if any reduce cell referenced a production number the
-//      rules file doesn't define, .read() itself would throw. So a clean,
-//      non-throwing read of the real table already proves every reduce
-//      cell resolved to a real rule.
-//   2. Independently (without touching ParseTableReader's internals), this
-//      file re-parses ProductionRules.txt and SLR_ACTION_Table.csv's own
-//      "rN" cells with a few lines of ad-hoc text parsing (plain text, not
-//      XML - no need for the pugixml/no-hand-rolled-parsing rule that
-//      applies to tree.xml) and cross-checks the referenced numbers
-//      against the defined production range.
+// ReduceAction::rule is private, so out-of-range production checks below
+// rely on ActionTableReader::read() throwing on a bad "rN" cell, plus an
+// independent re-parse of the CSV/rules text as a cross-check.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -158,10 +137,8 @@ TEST_CASE("ProductionRules.txt defines the expected production set",
     if (nonTerminalFromName(lhsName)) recognisedLhsNumbers.insert(number);
   }
 
-  // 44 lines total: production 0 is the augmented start rule
-  // (SPL_PROG' -> SPL_PROG), which ParseTableReader::loadProductionRules
-  // deliberately skips (its LHS isn't a real NonTerminal), leaving 43
-  // reducible productions numbered 1..43.
+  // Production 0 is the augmented start rule, skipped as reducible -
+  // leaving 43 reducible productions numbered 1..43.
   INFO("total numbered lines in ProductionRules.txt: "
        << definedNumbers.size());
   REQUIRE(definedNumbers.size() == 44);
@@ -207,9 +184,7 @@ TEST_CASE(
     }
   }
 
-  // Cross-check against the real reader: if any reduce cell referenced a
-  // production number missing from ProductionRules.txt, ActionTableReader
-  // would throw std::out_of_range building the ReduceAction for that cell.
+  // Cross-check: a missing production number would throw here.
   ActionTableReader reader;
   std::vector<std::vector<ParserAction *>> table;
   REQUIRE_NOTHROW(table = reader.read("SLR_ACTION_Table.csv"));

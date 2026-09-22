@@ -9,10 +9,8 @@
 #include "parser.visitor.h"
 #include "TreeBuilder.h"
 
-// This is the single translation unit that includes generic.handler.h -
-// see the note in test_helpers.h for why (its createChain() isn't marked
-// `inline`, so a second #include site anywhere in the test binary would
-// be an ODR violation at link time).
+// Single translation unit that includes generic.handler.h - see the ODR
+// note in test_helpers.h.
 
 TokenHandler *newHandlerChain() { return createChain(); }
 

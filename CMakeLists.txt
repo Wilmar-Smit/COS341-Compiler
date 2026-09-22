@@ -37,7 +37,6 @@ target_include_directories(compiler
         ${INCLUDE_DIRS}
 )
 
-# ---------------- Tests ----------------
 # Catch2 and pugixml are fetched via FetchContent so contributors don't need
 # either installed system-wide - only network access at configure time.
 include(FetchContent)

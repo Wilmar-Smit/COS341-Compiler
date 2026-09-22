@@ -20,10 +20,6 @@
 // createChain() isn't `inline`, so only test_helpers.cpp includes
 // generic.handler.h directly - avoids an ODR link error elsewhere.
 
-// ---------------------------------------------------------------------
-// Running the pipeline
-// ---------------------------------------------------------------------
-//
 // Drives ParseVisitor directly instead of Parser::ParseTokens, whose
 // return value can't be trusted (always returns true - see PR writeup).
 
@@ -45,9 +41,7 @@ std::vector<Token *> tokenizeAll(const std::string &source);
 // test_helpers.cpp.
 PipelineResult runPipeline(const std::string &source);
 
-// ---------------------------------------------------------------------
-// Reading back tree.xml with pugixml
-// ---------------------------------------------------------------------
+// Reading back tree.xml with pugixml.
 
 struct XmlNodeInfo {
   std::string id;

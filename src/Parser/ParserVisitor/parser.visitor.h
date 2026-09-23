@@ -26,6 +26,12 @@ private:
   int StateIndex = 0;
   bool hitAcceptState = false;
   TreeBuilder xml;
+  // sticky end-of-input lookahead: once tokenIndex runs off the real
+  // token list, further reduce/accept decisions keep seeing this instead
+  // of stopping just because there's no more data to index into.
+  Token endOfInputToken{"$", TokenType::DOLLAR_EOF};
+
+  Token* currentToken();
 
 public:
   ParseVisitor(vector<vector<ParserAction*>>& table,

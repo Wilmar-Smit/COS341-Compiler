@@ -19,22 +19,30 @@ ParseVisitor::ParseVisitor(vector<vector<ParserAction*>>& table,
   // keeps a reference to the same tables and stack as the parser
 }
 
+Token* ParseVisitor::currentToken()
+{
+  if (this->tokenIndex < static_cast<int>(this->tokens.size())) {
+    return this->tokens[this->tokenIndex];
+  }
+  return &this->endOfInputToken;
+}
+
 bool ParseVisitor::parseTokens(vector<Token*> tokens)
 {
   this->tokens = tokens;
   try
   {
-    while (this->tokenIndex < tokens.size() && !this->hitAcceptState)
+    while (!this->hitAcceptState)
     {
+      Token* lookahead = currentToken();
 
-      if (tokens[this->tokenIndex]->getCode() == " ") {
+      if (lookahead->getCode() == " ") {
         this->tokenIndex++;
         continue;
       }
 
       this->StateIndex = static_cast<int>(stateStack.top());
-      int tableTokenIndex =
-        static_cast<int>(tokens[this->tokenIndex]->getType());
+      int tableTokenIndex = static_cast<int>(lookahead->getType());
 
       auto action = table[StateIndex][tableTokenIndex];
 
@@ -62,7 +70,7 @@ void ParseVisitor::visit(ParserAction* action)
 void ParseVisitor::visit(ShiftAction* action) {
 
   this->stateStack.push(action->state);
-  xml.shiftNode(*tokens[this->tokenIndex]);
+  xml.shiftNode(*currentToken());
   this->tokenIndex++;
 }
 
@@ -95,7 +103,8 @@ void ParseVisitor::visit(ReduceAction* action)
 
 void ParseVisitor::visit(ErrorAction* action) {
   int stateIndex = static_cast<int>(stateStack.top());
-  int tableTokenIndex = static_cast<int>(tokens[tokenIndex]->getType());
+  Token* lookahead = currentToken();
+  int tableTokenIndex = static_cast<int>(lookahead->getType());
   std::stringstream possibleTokens;
   possibleTokens << GREEN << "\nPossible expressions";
   for (int rowTokenIdx = 0; rowTokenIdx < table[stateIndex].size();
@@ -122,7 +131,7 @@ void ParseVisitor::visit(ErrorAction* action) {
 
   std::stringstream ss;
   ss << RED << "Parsing failed: Unexpected token of type " << tableTokenIndex
-     << " Being: " << patternFor(tokens[tokenIndex]->getType())
+     << " Being: " << patternFor(lookahead->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << "." << RESET;
 

@@ -1,5 +1,7 @@
-// Regression test: main.cpp's unconditional appended DOLLAR_EOF is
-// load-bearing, not redundant - see PR description.
+// Regression tests for the driver loop's end-of-input handling: once the
+// real token stream is exhausted, lookahead must keep sticking at
+// DOLLAR_EOF for any further reduce/accept decisions instead of the loop
+// exiting early - see PR description.
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -89,18 +91,68 @@ TEST_CASE(
   REQUIRE(result.xmlWritten);
 }
 
-// EXPECTED-TO-FAIL-ACCEPT: failing/not accepting here is CORRECT, not a
-// bug - today's driver loop never reaches AcceptAction with only one
-// DOLLAR_EOF (see PR description). If this starts passing, investigate;
-// it is not evidence the double-append is safe to remove.
-TEST_CASE("single trailing DOLLAR_EOF does not reach AcceptAction",
-          "[regression][dollar-sentinel][known-gap]") {
+// Was "single trailing DOLLAR_EOF does not reach AcceptAction" and
+// documented the bug (loop exited on tokenIndex >= size before the
+// trailing reduce-reduce-accept chain could run on the final lookahead).
+// The driver now sticks at DOLLAR_EOF once real input is exhausted
+// instead of stopping, so a single real $ is sufficient - this is the
+// deliberate fix, flip the expectation rather than let it go stale.
+TEST_CASE("single trailing DOLLAR_EOF reaches AcceptAction",
+          "[regression][dollar-sentinel]") {
   std::vector<Token *> tokens = tokenizeAll(kMinimalFixture);
   REQUIRE(countTrailingDollarEof(tokens) == 1);
 
   PipelineResult result = runPipelineFromTokens(tokens);
 
   INFO("parser diagnostics:\n" << result.diagnostics);
+  REQUIRE(result.accepted);
+  REQUIRE(result.xmlWritten);
+}
+
+// Invariant: real tutor SPL files never contain a literal $ (course
+// Announcement #23) - only main.cpp's appended DOLLAR_EOF supplies the
+// one $ the grammar's SPL_PROG -> P $ rule requires.
+TEST_CASE("zero-$ source accepts via main.cpp's single appended DOLLAR_EOF",
+          "[regression][dollar-sentinel]") {
+  std::vector<Token *> tokens = tokenizeAll(": :");
+  REQUIRE(countTrailingDollarEof(tokens) == 0);
+
+  tokens.push_back(new Token("$", TokenType::DOLLAR_EOF));
+
+  PipelineResult result = runPipelineFromTokens(tokens);
+
+  INFO("parser diagnostics:\n" << result.diagnostics);
+  REQUIRE(result.accepted);
+  REQUIRE(result.xmlWritten);
+}
+
+// Stress test: nested empty V_DECL/F_DECL/ALGO (two levels of function
+// body, each all-epsilon) must still resolve down to AcceptAction, not
+// just the fixed two-step chain the minimal fixture exercises.
+TEST_CASE("deeply nested trailing epsilon reduces reach AcceptAction",
+          "[regression][dollar-sentinel]") {
+  std::string source =
+      ": void #f ( ) { : void #g ( ) { : : return } : return } : $";
+  std::vector<Token *> tokens = tokenizeAll(source);
+  REQUIRE(countTrailingDollarEof(tokens) == 1);
+
+  PipelineResult result = runPipelineFromTokens(tokens);
+
+  INFO("parser diagnostics:\n" << result.diagnostics);
+  REQUIRE(result.accepted);
+  REQUIRE(result.xmlWritten);
+}
+
+// A genuine syntax error (unbalanced brace) must still hit ErrorAction,
+// not hang or silently accept, once lookahead sticks at DOLLAR_EOF.
+TEST_CASE("malformed program still triggers ErrorAction, not a hang",
+          "[regression][dollar-sentinel]") {
+  std::vector<Token *> tokens = tokenizeAll(": void #f ( ) { : : return $");
+
+  PipelineResult result = runPipelineFromTokens(tokens);
+
+  INFO("parser diagnostics:\n" << result.diagnostics);
   REQUIRE_FALSE(result.accepted);
   REQUIRE_FALSE(result.xmlWritten);
+  REQUIRE_FALSE(result.diagnostics.empty());
 }

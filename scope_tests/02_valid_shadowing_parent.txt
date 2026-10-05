@@ -1,9 +1,6 @@
-:
-num #globalvar :
-:
+#globalvar :
 num #func ( ) {
-    : 
-    num #localvar :
+    #localvar :
     :
     #localvar = add ( #globalvar 5 ) ;
     return ( #localvar )

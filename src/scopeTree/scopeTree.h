@@ -8,6 +8,7 @@ class ScopeTree {
 private:
   SymbolTable sym;
 
+private:
   void buildScopeTree(Node *node, int currentScopeId);
   void processVDecl(Node *node, int currentScopeId);
   void processFDecl(Node *node);
@@ -18,6 +19,7 @@ private:
   void processCall(Node *node, int currentScopeId);
   void processBranch(Node *node, int currentScopeId);
   void processLoop(Node *node, int currentScopeId);
+  void processTermOrExpr(Node *node, int currentScopeId);
 
 public:
   ScopeTree(TreeBuilder &tree);

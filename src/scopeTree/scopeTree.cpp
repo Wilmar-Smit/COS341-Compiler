@@ -18,26 +18,43 @@ void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
   if (!node)
     return;
 
-  if (node->symbol == "P" || node->symbol == "SPL_PROG") {
-    for (Node *child : node->children) {
-      if (child->symbol == "V_DECL") {
-        processVDecl(child, 0);
-      } else if (child->symbol == "F_DECL") {
-        processFDecl(child);
-      } else if (child->symbol == "ALGO") {
-        processAlgo(child, 0);
-      }
-    }
-  } else if (node->symbol == "F_TYPE") {
+  // Handle variable declarations
+  if (node->symbol == "V_DECL") {
+    processVDecl(node, currentScopeId);
+    return;
+  }
+
+  // Handle function definitions / scopes
+  if (node->symbol == "F_TYPE") {
     processFType(node);
-  } else if (node->symbol == "BRANCH") {
-    processBranch(node, currentScopeId);
-  } else if (node->symbol == "LOOP") {
-    processLoop(node, currentScopeId);
-  } else {
-    for (Node *child : node->children) {
-      buildScopeTree(child, currentScopeId);
+    return;
+  }
+
+  // Handle scope blocks (BRANCH / LOOP)
+  int nextScopeId = currentScopeId;
+  if (node->symbol == "BRANCH" || node->symbol == "LOOP") {
+    const Scope *parentScope = sym.getScope(currentScopeId);
+    int newLevel = parentScope ? parentScope->level + 1 : 2;
+    nextScopeId = sym.createScope(newLevel, currentScopeId);
+  }
+
+  // Universal check for identifier usages (nodes starting with '#')
+  if (!node->symbol.empty() && node->symbol[0] == '#') {
+    VariableSymbol var;
+    FunctionSymbol func;
+    if (sym.lookupVariable(node->symbol, nextScopeId, var)) {
+      node->symbol = var.systemName;
+    } else if (sym.lookupFunction(node->symbol, func)) {
+      node->symbol = func.systemName;
+    } else {
+      throw std::runtime_error("Semantic Error: Undeclared identifier '" +
+                               node->symbol + "'");
     }
+  }
+
+  // Recursively traverse all children
+  for (Node *child : node->children) {
+    buildScopeTree(child, nextScopeId);
   }
 }
 
@@ -71,6 +88,8 @@ void ScopeTree::processVDecl(Node *node, int currentScopeId) {
   for (Node *child : node->children) {
     if (child->symbol == "V_DECL") {
       processVDecl(child, currentScopeId);
+    } else {
+      buildScopeTree(child, currentScopeId);
     }
   }
 }
@@ -108,6 +127,7 @@ void ScopeTree::processFType(Node *node) {
 
   int funcScopeId = sym.createScope(1, 0);
 
+  // Process local variable declarations inside the function scope
   for (Node *child : node->children) {
     if (child->symbol == "V_DECL") {
       processVDecl(child, funcScopeId);
@@ -132,113 +152,11 @@ void ScopeTree::processFType(Node *node) {
     funcNode->symbol = func.systemName;
   }
 
+  // Traverse the rest of the function body (ALGO, inner P blocks, etc.) with
+  // the function scope ID
   for (Node *child : node->children) {
-    if (child->symbol == "ALGO" || child->symbol == "P") {
+    if (child->symbol != "V_DECL" && child != funcNode) {
       buildScopeTree(child, funcScopeId);
-    }
-  }
-}
-
-void ScopeTree::processAlgo(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  for (Node *child : node->children) {
-    if (child->symbol == "INSTR") {
-      processInstr(child, currentScopeId);
-    } else if (child->symbol == "ALGO") {
-      processAlgo(child, currentScopeId);
-    }
-  }
-}
-
-void ScopeTree::processInstr(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  for (Node *child : node->children) {
-    if (child->symbol == "ASSIGN") {
-      processAssign(child, currentScopeId);
-    } else if (child->symbol == "CALL") {
-      processCall(child, currentScopeId);
-    } else if (child->symbol == "BRANCH") {
-      processBranch(child, currentScopeId);
-    } else if (child->symbol == "LOOP") {
-      processLoop(child, currentScopeId);
-    } else {
-      buildScopeTree(child, currentScopeId);
-    }
-  }
-}
-
-void ScopeTree::processAssign(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  for (Node *child : node->children) {
-    if (!child->symbol.empty() && child->symbol[0] == '#') {
-      VariableSymbol var;
-      if (sym.lookupVariable(child->symbol, currentScopeId, var)) {
-        child->symbol = var.systemName;
-      } else {
-        throw std::runtime_error("Semantic Error: Undeclared variable '" +
-                                 child->symbol + "'");
-      }
-    } else {
-      buildScopeTree(child, currentScopeId);
-    }
-  }
-}
-
-void ScopeTree::processCall(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  for (Node *child : node->children) {
-    if (!child->symbol.empty() && child->symbol[0] == '#') {
-      FunctionSymbol func;
-      if (sym.lookupFunction(child->symbol, func)) {
-        child->symbol = func.systemName;
-      } else {
-        throw std::runtime_error("Semantic Error: Undeclared function '" +
-                                 child->symbol + "'");
-      }
-    } else {
-      buildScopeTree(child, currentScopeId);
-    }
-  }
-}
-
-void ScopeTree::processBranch(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  const Scope *parentScope = sym.getScope(currentScopeId);
-  int newLevel = parentScope ? parentScope->level + 1 : 2;
-  int blockScopeId = sym.createScope(newLevel, currentScopeId);
-
-  for (Node *child : node->children) {
-    if (child->symbol == "ALGO") {
-      processAlgo(child, blockScopeId);
-    } else {
-      buildScopeTree(child, blockScopeId);
-    }
-  }
-}
-
-void ScopeTree::processLoop(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  const Scope *parentScope = sym.getScope(currentScopeId);
-  int newLevel = parentScope ? parentScope->level + 1 : 2;
-  int blockScopeId = sym.createScope(newLevel, currentScopeId);
-
-  for (Node *child : node->children) {
-    if (child->symbol == "ALGO") {
-      processAlgo(child, blockScopeId);
-    } else {
-      buildScopeTree(child, blockScopeId);
     }
   }
 }

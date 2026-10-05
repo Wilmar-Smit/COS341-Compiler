@@ -1,0 +1,1 @@
+#klong : : #var = -0.0 ; comment "lex-err:negative-null" ; 

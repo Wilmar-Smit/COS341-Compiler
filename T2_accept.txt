@@ -1,0 +1,1 @@
+# #0 : void #foo ( #1 ) { #ding #dong : : return } num #bar ( # ) { : void #proc ( ) { : : print "??" ; return } : #007 = 12 ; return ( neg ( 1 ) ) } : nop ; do { } until or ( eq ( 9.01 #klonk12 ( ) ) or ( eq ( add ( #aaa #aaaa ) #aaaaa ) lesser ( # -9.01 ) ) ) ; 

@@ -23,7 +23,7 @@ int main() {
 
   std::vector<Token *> tokenList;
 
-  string stream = readFileToString("input.txt");
+  string stream = readFileToString("T6_ synt-err.txt");
   // cout << stream << endl;
 
   try {

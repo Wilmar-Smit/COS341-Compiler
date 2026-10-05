@@ -1,0 +1,1 @@
+#pling : : if not ( lesser ( 0 #plong ) ) then { nop ; } else { print ( #foo ( 777 99 ) ) ; nop ; } ; comment "steampunk" ; 

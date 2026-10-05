@@ -48,7 +48,9 @@ public:
 
   bool lookupVariable(const std::string &name, int startScopeId,
                       VariableSymbol &outSymbol) const;
-  bool lookupFunction(const std::string &name, FunctionSymbol &outSymbol) const;
+
+  bool lookupFunction(const std::string &name, int startScopeId,
+                      FunctionSymbol &outSymbol) const;
 };
 
 #endif // SYMBOL_TABLE_H

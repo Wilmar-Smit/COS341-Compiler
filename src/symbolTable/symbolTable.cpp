@@ -72,15 +72,14 @@ bool SymbolTable::lookupVariable(const std::string &name, int startScopeId,
   }
   return false;
 }
-
-bool SymbolTable::lookupFunction(const std::string &name,
+bool SymbolTable::lookupFunction(const std::string &name, int scopeId,
                                  FunctionSymbol &outSymbol) const {
-  const Scope *globalScope = getScope(0);
-  if (!globalScope)
+  const Scope *scope = getScope(scopeId);
+  if (!scope)
     return false;
 
-  auto it = globalScope->functions.find(name);
-  if (it != globalScope->functions.end()) {
+  auto it = scope->functions.find(name);
+  if (it != scope->functions.end()) {
     outSymbol = it->second;
     return true;
   }

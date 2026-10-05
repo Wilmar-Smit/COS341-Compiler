@@ -14,50 +14,6 @@ const SymbolTable &ScopeTree::getSymbolTable() const { return sym; }
 
 bool ScopeTree::validateScopes() { return true; }
 
-void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
-  if (!node)
-    return;
-
-  // Handle variable declarations
-  if (node->symbol == "V_DECL") {
-    processVDecl(node, currentScopeId);
-    return;
-  }
-
-  // Handle function definitions / scopes
-  if (node->symbol == "F_TYPE") {
-    processFType(node);
-    return;
-  }
-
-  // Handle scope blocks (BRANCH / LOOP)
-  int nextScopeId = currentScopeId;
-  if (node->symbol == "BRANCH" || node->symbol == "LOOP") {
-    const Scope *parentScope = sym.getScope(currentScopeId);
-    int newLevel = parentScope ? parentScope->level + 1 : 2;
-    nextScopeId = sym.createScope(newLevel, currentScopeId);
-  }
-
-  // Universal check for identifier usages (nodes starting with '#')
-  if (!node->symbol.empty() && node->symbol[0] == '#') {
-    VariableSymbol var;
-    FunctionSymbol func;
-    if (sym.lookupVariable(node->symbol, nextScopeId, var)) {
-      node->symbol = var.systemName;
-    } else if (sym.lookupFunction(node->symbol, func)) {
-      node->symbol = func.systemName;
-    } else {
-      throw std::runtime_error("Semantic Error: Undeclared identifier '" +
-                               node->symbol + "'");
-    }
-  }
-
-  // Recursively traverse all children
-  for (Node *child : node->children) {
-    buildScopeTree(child, nextScopeId);
-  }
-}
-
 void ScopeTree::processVDecl(Node *node, int currentScopeId) {
   if (!node || node->children.empty())
     return;
@@ -94,20 +50,69 @@ void ScopeTree::processVDecl(Node *node, int currentScopeId) {
   }
 }
 
-void ScopeTree::processFDecl(Node *node) {
+void ScopeTree::processFDecl(Node *node, int currentScopeId) {
   if (!node)
     return;
 
   for (Node *child : node->children) {
     if (child->symbol == "F_TYPE") {
-      processFType(child);
+      processFType(child, currentScopeId);
     } else if (child->symbol == "F_DECL") {
-      processFDecl(child);
+      processFDecl(child, currentScopeId);
     }
   }
 }
 
-void ScopeTree::processFType(Node *node) {
+void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
+  if (!node)
+    return;
+
+  // Handle variable declarations
+  if (node->symbol == "V_DECL") {
+    processVDecl(node, currentScopeId);
+    return;
+  }
+
+  // Handle function definitions / scopes
+  if (node->symbol == "F_TYPE") {
+    processFType(node, currentScopeId);
+    return;
+  }
+
+  if (node->symbol == "F_DECL") {
+    processFDecl(node, currentScopeId);
+    return;
+  }
+
+  // Handle scope blocks (BRANCH / LOOP)
+  int nextScopeId = currentScopeId;
+  if (node->symbol == "BRANCH" || node->symbol == "LOOP") {
+    const Scope *parentScope = sym.getScope(currentScopeId);
+    int newLevel = parentScope ? parentScope->level + 1 : 2;
+    nextScopeId = sym.createScope(newLevel, currentScopeId);
+  }
+
+  // Universal check for identifier usages (nodes starting with '#')
+  if (!node->symbol.empty() && node->symbol[0] == '#') {
+    VariableSymbol var;
+    FunctionSymbol func;
+    if (sym.lookupVariable(node->symbol, nextScopeId, var)) {
+      node->symbol = var.systemName;
+    } else if (sym.lookupFunction(node->symbol, nextScopeId, func)) {
+      node->symbol = func.systemName;
+    } else {
+      throw std::runtime_error("Semantic Error: Undeclared identifier '" +
+                               node->symbol + "'");
+    }
+  }
+
+  // Recursively traverse all children
+  for (Node *child : node->children) {
+    buildScopeTree(child, nextScopeId);
+  }
+}
+
+void ScopeTree::processFType(Node *node, int currentScopeId) {
   if (!node)
     return;
 
@@ -125,7 +130,7 @@ void ScopeTree::processFType(Node *node) {
     }
   }
 
-  int funcScopeId = sym.createScope(1, 0);
+  int funcScopeId = sym.createScope(1, currentScopeId);
 
   // Process local variable declarations inside the function scope
   for (Node *child : node->children) {
@@ -144,7 +149,7 @@ void ScopeTree::processFType(Node *node) {
   if (funcNode) {
     FunctionSymbol func{funcNode->symbol, "", returnType, paramTypes,
                         funcScopeId};
-    if (!sym.addFunction(0, func)) {
+    if (!sym.addFunction(currentScopeId, func)) {
       throw std::runtime_error(
           "Semantic Error: Duplicate function declaration '" +
           funcNode->symbol + "'");
@@ -152,8 +157,7 @@ void ScopeTree::processFType(Node *node) {
     funcNode->symbol = func.systemName;
   }
 
-  // Traverse the rest of the function body (ALGO, inner P blocks, etc.) with
-  // the function scope ID
+  // Traverse the rest of the function body with the function scope ID
   for (Node *child : node->children) {
     if (child->symbol != "V_DECL" && child != funcNode) {
       buildScopeTree(child, funcScopeId);

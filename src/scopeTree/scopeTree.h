@@ -11,8 +11,8 @@ private:
 private:
   void buildScopeTree(Node *node, int currentScopeId);
   void processVDecl(Node *node, int currentScopeId);
-  void processFDecl(Node *node);
-  void processFType(Node *node);
+  void processFType(Node *node, int currentScopeId);
+  void processFDecl(Node *node, int currentScopeId);
   void processAlgo(Node *node, int currentScopeId);
   void processInstr(Node *node, int currentScopeId);
   void processAssign(Node *node, int currentScopeId);

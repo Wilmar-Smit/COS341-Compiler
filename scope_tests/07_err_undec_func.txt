@@ -2,6 +2,6 @@
 num #main ( ) {
     #res :
     :
-    #res = #nonExistent ( ) ;
+    #res = #nonexistent ( ) ;
     return ( #res )
 } :

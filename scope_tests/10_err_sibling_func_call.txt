@@ -1,10 +1,17 @@
 :
-num #helper ( ) {
+num #outer ( ) {
     :
-    return ( 10 )
+    num #helper ( ) {
+        :
+        :
+        return ( 10 )
+    }
+    :
+    return ( 0 )
 }
 num #caller ( ) {
-    #res :
+    #res
+    :
     :
     #res = #helper ( ) ;
     return ( #res )

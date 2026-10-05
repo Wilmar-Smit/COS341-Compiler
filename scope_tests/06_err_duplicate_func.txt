@@ -1,9 +1,13 @@
 :
-num #foo ( ) {
+num #myfunc ( ) {
+    :
     :
     return ( 0 )
 }
-num #foo ( ) {
+num #myfunc ( ) {
+    :
     :
     return ( 1 )
-} :
+}
+
+:

@@ -1,6 +1,6 @@
-#counter :
+#counter
 :
-num #loopTest ( ) {
+num #looptest ( ) {
     #i :
     :
     #i = 0 ;

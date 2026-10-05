@@ -5,16 +5,18 @@
 #include <unordered_map>
 #include <vector>
 
-enum class DataType { NUM, STRING, VOID, UNKNOWN };
+enum class DataType { NUM, STRING, VOID };
 
 struct VariableSymbol {
   std::string name;
+  std::string systemName;
   DataType type;
   int scopeId;
 };
 
 struct FunctionSymbol {
   std::string name;
+  std::string systemName;
   DataType returnType;
   std::vector<DataType> paramTypes;
   int scopeId;
@@ -29,20 +31,20 @@ struct Scope {
 };
 
 class SymbolTable {
-public:
-  std::unordered_map<int, std::vector<Scope>> scopes;
+private:
   int currentScopeId;
   int nextScopeId;
+  std::unordered_map<int, std::vector<Scope>> scopes;
 
+public:
   SymbolTable();
 
   int createScope(int level, int parentId);
-
   Scope *getScope(int scopeId);
   const Scope *getScope(int scopeId) const;
 
-  bool addVariable(int scopeId, const VariableSymbol &symbol);
-  bool addFunction(int scopeId, const FunctionSymbol &symbol);
+  bool addVariable(int scopeId, VariableSymbol &symbol);
+  bool addFunction(int scopeId, FunctionSymbol &symbol);
 
   bool lookupVariable(const std::string &name, int startScopeId,
                       VariableSymbol &outSymbol) const;

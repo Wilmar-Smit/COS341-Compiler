@@ -28,4 +28,4 @@ public:
   bool validateScopes();
 };
 
-#endif
+#endif // SCOPE_TREE_H

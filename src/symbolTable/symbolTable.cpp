@@ -1,5 +1,7 @@
 #include "symbolTable.h"
 
+static int systemNameCounter = 0;
+
 SymbolTable::SymbolTable() : currentScopeId(0), nextScopeId(0) {
   createScope(0, -1);
 }
@@ -31,26 +33,24 @@ const Scope *SymbolTable::getScope(int scopeId) const {
   return nullptr;
 }
 
-bool SymbolTable::addVariable(int scopeId, const VariableSymbol &symbol) {
+bool SymbolTable::addVariable(int scopeId, VariableSymbol &symbol) {
   Scope *scope = getScope(scopeId);
-  if (!scope) {
+  if (!scope || scope->variables.find(symbol.name) != scope->variables.end()) {
     return false;
   }
-  if (scope->variables.find(symbol.name) != scope->variables.end()) {
-    return false;
-  }
+
+  symbol.systemName = "sys" + std::to_string(systemNameCounter++);
   scope->variables[symbol.name] = symbol;
   return true;
 }
 
-bool SymbolTable::addFunction(int scopeId, const FunctionSymbol &symbol) {
+bool SymbolTable::addFunction(int scopeId, FunctionSymbol &symbol) {
   Scope *scope = getScope(scopeId);
-  if (!scope) {
+  if (!scope || scope->functions.find(symbol.name) != scope->functions.end()) {
     return false;
   }
-  if (scope->functions.find(symbol.name) != scope->functions.end()) {
-    return false;
-  }
+
+  symbol.systemName = "sys" + std::to_string(systemNameCounter++);
   scope->functions[symbol.name] = symbol;
   return true;
 }
@@ -60,16 +60,14 @@ bool SymbolTable::lookupVariable(const std::string &name, int startScopeId,
   int currId = startScopeId;
   while (currId != -1) {
     const Scope *scope = getScope(currId);
-    if (!scope) {
+    if (!scope)
       break;
-    }
 
     auto it = scope->variables.find(name);
     if (it != scope->variables.end()) {
       outSymbol = it->second;
       return true;
     }
-
     currId = scope->parentId;
   }
   return false;
@@ -78,15 +76,13 @@ bool SymbolTable::lookupVariable(const std::string &name, int startScopeId,
 bool SymbolTable::lookupFunction(const std::string &name,
                                  FunctionSymbol &outSymbol) const {
   const Scope *globalScope = getScope(0);
-  if (!globalScope) {
+  if (!globalScope)
     return false;
-  }
 
   auto it = globalScope->functions.find(name);
   if (it != globalScope->functions.end()) {
     outSymbol = it->second;
     return true;
   }
-
   return false;
 }

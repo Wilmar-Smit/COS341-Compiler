@@ -1,4 +1,5 @@
 #include "scopeTree.h"
+#include <stdexcept>
 
 ScopeTree::ScopeTree(TreeBuilder &tree) {
   Node *root = tree.getRoot();
@@ -44,12 +45,12 @@ void ScopeTree::processVDecl(Node *node, int currentScopeId) {
   if (!node || node->children.empty())
     return;
 
-  std::string varName = "";
+  Node *varNode = nullptr;
   DataType type = DataType::NUM;
 
   for (Node *child : node->children) {
     if (!child->symbol.empty() && child->symbol[0] == '#') {
-      varName = child->symbol;
+      varNode = child;
     } else if (child->symbol == "num" || child->symbol == "n") {
       type = DataType::NUM;
     } else if (child->symbol == "string" || child->symbol == "s") {
@@ -57,9 +58,14 @@ void ScopeTree::processVDecl(Node *node, int currentScopeId) {
     }
   }
 
-  if (!varName.empty()) {
-    VariableSymbol var{varName, type, currentScopeId};
-    sym.addVariable(currentScopeId, var);
+  if (varNode) {
+    VariableSymbol var{varNode->symbol, "", type, currentScopeId};
+    if (!sym.addVariable(currentScopeId, var)) {
+      throw std::runtime_error(
+          "Semantic Error: Duplicate variable declaration '" + varNode->symbol +
+          "'");
+    }
+    varNode->symbol = var.systemName;
   }
 
   for (Node *child : node->children) {
@@ -86,13 +92,13 @@ void ScopeTree::processFType(Node *node) {
   if (!node)
     return;
 
-  std::string funcName = "";
+  Node *funcNode = nullptr;
   DataType returnType = DataType::VOID;
   std::vector<DataType> paramTypes;
 
   for (Node *child : node->children) {
     if (!child->symbol.empty() && child->symbol[0] == '#') {
-      funcName = child->symbol;
+      funcNode = child;
     } else if (child->symbol == "num") {
       returnType = DataType::NUM;
     } else if (child->symbol == "void") {
@@ -115,12 +121,20 @@ void ScopeTree::processFType(Node *node) {
     }
   }
 
-  FunctionSymbol func{funcName, returnType, paramTypes, funcScopeId};
-  sym.addFunction(0, func);
+  if (funcNode) {
+    FunctionSymbol func{funcNode->symbol, "", returnType, paramTypes,
+                        funcScopeId};
+    if (!sym.addFunction(0, func)) {
+      throw std::runtime_error(
+          "Semantic Error: Duplicate function declaration '" +
+          funcNode->symbol + "'");
+    }
+    funcNode->symbol = func.systemName;
+  }
 
   for (Node *child : node->children) {
-    if (child->symbol == "ALGO") {
-      processAlgo(child, funcScopeId);
+    if (child->symbol == "ALGO" || child->symbol == "P") {
+      buildScopeTree(child, funcScopeId);
     }
   }
 }
@@ -151,6 +165,8 @@ void ScopeTree::processInstr(Node *node, int currentScopeId) {
       processBranch(child, currentScopeId);
     } else if (child->symbol == "LOOP") {
       processLoop(child, currentScopeId);
+    } else {
+      buildScopeTree(child, currentScopeId);
     }
   }
 }
@@ -162,7 +178,14 @@ void ScopeTree::processAssign(Node *node, int currentScopeId) {
   for (Node *child : node->children) {
     if (!child->symbol.empty() && child->symbol[0] == '#') {
       VariableSymbol var;
-      sym.lookupVariable(child->symbol, currentScopeId, var);
+      if (sym.lookupVariable(child->symbol, currentScopeId, var)) {
+        child->symbol = var.systemName;
+      } else {
+        throw std::runtime_error("Semantic Error: Undeclared variable '" +
+                                 child->symbol + "'");
+      }
+    } else {
+      buildScopeTree(child, currentScopeId);
     }
   }
 }
@@ -174,7 +197,14 @@ void ScopeTree::processCall(Node *node, int currentScopeId) {
   for (Node *child : node->children) {
     if (!child->symbol.empty() && child->symbol[0] == '#') {
       FunctionSymbol func;
-      sym.lookupFunction(child->symbol, func);
+      if (sym.lookupFunction(child->symbol, func)) {
+        child->symbol = func.systemName;
+      } else {
+        throw std::runtime_error("Semantic Error: Undeclared function '" +
+                                 child->symbol + "'");
+      }
+    } else {
+      buildScopeTree(child, currentScopeId);
     }
   }
 }

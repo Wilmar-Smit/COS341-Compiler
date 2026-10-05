@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "TreeBuilder.h"
 #include "createParseTable.h"
 #include "parser.visitor.h"
 #include "state.enum.h"
@@ -9,13 +10,13 @@ Parser::Parser() {
   this->table = createParseTable();
   this->gotoTable = createGotoTable();
   this->stateStack.push(ParserStates::S0); // S0 pushed on
-  this->xml = TreeBuilder();
+  this->xml = new TreeBuilder();
   this->visitor = new ParseVisitor(
-    table, gotoTable,
-    stateStack,
-    xml
-  ); // does not manage memory these are just references
+      table, gotoTable, stateStack,
+      *xml); // does not manage memory these are just references
 }
+
+TreeBuilder *Parser::getTree() { return xml; }
 
 bool Parser::ParseTokens(vector<Token *> tokens) {
 

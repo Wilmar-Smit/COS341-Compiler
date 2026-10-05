@@ -1,130 +1,109 @@
-
-#include "Parser.h"
-#include "fileReader/filereader.h"
-#include "fileReader/parseTableReader.h"
-#include "token.h"
-#include "tokenHandler.h"
-#include "tokens/genericTokenHandler/generic.handler.h"
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include "Parser.h"
+#include "fileReader/filereader.h"
+#include "fileReader/parseTableReader.h"
+#include "scopeTree/scopeTree.h"
+#include "token.h"
+#include "tokenHandler.h"
+#include "tokens/genericTokenHandler/generic.handler.h"
+
 const std::string GREEN = "\033[32m";
 const std::string RED = "\033[31m";
 const std::string RESET = "\033[0m";
 
-void test();
+int main(int argc, char *argv[]) {
+  std::string filename = "input.txt";
+  if (argc > 1) {
+    filename = argv[1];
+  }
 
-int main() {
+  std::cout << "\n------------ STARTING COMPILATION ------------\n"
+            << std::endl;
+  std::cout << "Target File: " << filename << std::endl;
 
-  cout << "\n\n------------ STARTING COMPILATION ------------\n\n" << endl;
+  // ------------ LEXICAL ANALYSIS ------------
 
   TokenHandler *chain = createChain();
-
   std::vector<Token *> tokenList;
-
-  string stream = readFileToString("T6_ synt-err.txt");
-  // cout << stream << endl;
+  std::string stream;
 
   try {
-    while (stream != "") {
+    stream = readFileToString(filename);
+  } catch (const std::exception &e) {
+    std::cerr << RED << "Error reading file: " << e.what() << RESET
+              << std::endl;
+    delete chain;
+    return 1;
+  }
+
+  bool lexingFailed = false;
+  bool parsingPassed = false;
+  Parser parse;
+
+  try {
+    while (!stream.empty()) {
       auto res = chain->handle(stream);
       tokenList.push_back(res.token);
       stream = res.remainingStream;
-      // cout << "Remaining stream : [" << stream << "]\n" << endl;
     }
-  } catch (std::runtime_error e) {
-    cout << RED << e.what() << RESET << endl;
-    cout << RED << "COMPILING FAILED LEXER STAGE:" << RESET << endl;
+  } catch (const std::runtime_error &e) {
+    std::cerr << RED << e.what() << RESET << std::endl;
+    std::cerr << RED << "COMPILING FAILED AT LEXER STAGE" << RESET << std::endl;
+    lexingFailed = true;
   }
 
-  // ------------ LOADING ACTION TABLE  ------------
+  // ------------ PARSING STAGE ------------
 
-  ActionTableReader *tableReader = new ActionTableReader("ProductionRules.txt");
-  auto actionTable = tableReader->read("SLR_ACTION_Table.csv");
+  if (!lexingFailed) {
+    ActionTableReader *tableReader =
+        new ActionTableReader("ProductionRules.txt");
+    auto actionTable = tableReader->read("SLR_ACTION_Table.csv");
 
-  // ------------ Run input  MANAGEMENT ------------
+    tokenList.push_back(new Token("$", TokenType::DOLLAR_EOF));
 
-  Parser parse;
-  tokenList.push_back(new Token("$", TokenType::DOLLAR_EOF));
-  parse.ParseTokens(tokenList);
+    parsingPassed = parse.ParseTokens(tokenList);
 
-  cout << "\n\n------------ ENDING COMPILATION ------------\n\n" << endl;
+    for (auto &row : actionTable) {
+      for (auto action : row) {
+        delete action;
+      }
+    }
+    delete tableReader;
+  }
+
+  // ------------ SEMANTIC ANALYSIS (PHASE 2a) ------------
+
+  if (parsingPassed) {
+    TreeBuilder *tree = parse.getTree();
+    if (tree) {
+      ScopeTree scopeTree(*tree);
+      bool scopeValid = scopeTree.validateScopes();
+
+      if (scopeValid) {
+        std::cout << GREEN << "SCOPE RESOLUTION & SEMANTIC ANALYSIS PASSED"
+                  << RESET << std::endl;
+      } else {
+        std::cout << RED << "SCOPE RESOLUTION FAILED" << RESET << std::endl;
+      }
+    }
+  }
+
+  std::cout << "\n------------ ENDING COMPILATION ------------\n" << std::endl;
 
   // ------------ MEMORY MANAGEMENT ------------
 
-  for (auto &row : actionTable) {
-    for (auto action : row) {
-      delete action;
-    }
+  if (parse.getTree()) {
+    delete parse.getTree();
   }
-  delete tableReader;
+
   for (auto token : tokenList) {
-    //  cout << GREEN << "Token code :[" << token->getCode() << "]" << RESET
-    //   << endl;
     delete token;
   }
-
   delete chain;
-  return 0;
-}
 
-void test() {
-  TokenHandler *chain = createChain();
-
-  std::vector<Token *> tokenList;
-
-  string stream = readFileToString("input.txt");
-  // cout << stream << endl;
-
-  try {
-    while (stream != "") {
-      auto res = chain->handle(stream);
-      tokenList.push_back(res.token);
-      stream = res.remainingStream;
-      // cout << "Remaining stream : [" << stream << "]\n" << endl;
-    }
-  } catch (std::runtime_error e) {
-    cout << RED << e.what() << RESET << endl;
-    cout << RED << "COMPILING FAILED LEXER STAGE:" << RESET << endl;
-  }
-
-  // ------------ LOADING ACTION TABLE + BASIC TESTS ------------
-
-  ActionTableReader *tableReader = new ActionTableReader("ProductionRules.txt");
-  auto actionTable = tableReader->read("SLR_ACTION_Table.csv");
-
-  cout << "Action table rows: " << actionTable.size() << endl;
-  cout << "Action table cols (row 0): " << actionTable[0].size() << endl;
-
-  // state 0 on NAME should shift (V_DECL -> NAME V_DECL)
-  bool shiftOk = dynamic_cast<ShiftAction *>(
-                     actionTable[0][(int)TokenType::NAME]) != nullptr;
-  cout << (shiftOk ? GREEN : RED)
-       << "state 0, NAME -> ShiftAction : " << (shiftOk ? "PASS" : "FAIL")
-       << RESET << endl;
-
-  // state 0 on RPAREN/COLON should reduce (V_DECL -> EPSILON)
-  bool reduceOk =
-      dynamic_cast<ReduceAction *>(actionTable[0][(int)TokenType::RPAREN]) !=
-          nullptr &&
-      dynamic_cast<ReduceAction *>(actionTable[0][(int)TokenType::COLON]) !=
-          nullptr;
-  cout << (reduceOk ? GREEN : RED) << "state 0, RPAREN/COLON -> ReduceAction : "
-       << (reduceOk ? "PASS" : "FAIL") << RESET << endl;
-
-  // state 1 on $ should accept
-  bool acceptOk = dynamic_cast<AcceptAction *>(
-                      actionTable[1][(int)TokenType::DOLLAR_EOF]) != nullptr;
-  cout << (acceptOk ? GREEN : RED)
-       << "state 1, $ -> AcceptAction : " << (acceptOk ? "PASS" : "FAIL")
-       << RESET << endl;
-
-  // a column with no entry at state 0 (e.g. LBRACE) should default to
-  // ErrorAction
-  bool errorOk = dynamic_cast<ErrorAction *>(
-                     actionTable[0][(int)TokenType::LBRACE]) != nullptr;
-  cout << (errorOk ? GREEN : RED)
-       << "state 0, LBRACE -> ErrorAction : " << (errorOk ? "PASS" : "FAIL")
-       << RESET << endl;
+  return (lexingFailed || !parsingPassed) ? 1 : 0;
 }

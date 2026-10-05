@@ -18,154 +18,107 @@ const std::string CYAN = "\033[36m";
 const std::string RESET = "\033[0m";
 
 int main(int argc, char *argv[]) {
-  std::string filename = "input.txt";
-  if (argc > 1) {
-    filename = argv[1];
-  }
+  std::string filename = argc > 1 ? argv[1] : "input.txt";
 
   std::cout << "\n==============================================" << std::endl;
-  std::cout << "          STARTING SPL COMPILATION            " << std::endl;
+  std::cout << "          STARTING SPL COMPILATION          " << std::endl;
   std::cout << "==============================================" << std::endl;
   std::cout << "Target Source File: " << CYAN << filename << RESET << std::endl;
 
-  // ------------ LEXICAL ANALYSIS ------------
-  std::cout << "\n"
-            << YELLOW << "[STAGE 1] Lexical Analysis (Scanning)..." << RESET
-            << std::endl;
-
+  // ------------ STAGE 1: LEXICAL ANALYSIS ------------
   TokenHandler *chain = createChain();
   std::vector<Token *> tokenList;
   std::string stream;
 
   try {
     stream = readFileToString(filename);
-    std::cout << " -> File loaded successfully (" << stream.length()
-              << " characters)." << std::endl;
-  } catch (const std::exception &e) {
-    std::cerr << RED << " -> Error reading file: " << e.what() << RESET
-              << std::endl;
-    delete chain;
-    return 1;
-  }
-
-  bool lexingFailed = false;
-  bool parsingPassed = false;
-  Parser parse;
-
-  try {
     while (!stream.empty()) {
       auto res = chain->handle(stream);
       tokenList.push_back(res.token);
       stream = res.remainingStream;
     }
-    std::cout << GREEN << " -> Lexical Analysis Complete. Tokens Generated: "
-              << tokenList.size() << RESET << std::endl;
-  } catch (const std::runtime_error &e) {
-    std::cerr << RED << " -> " << e.what() << RESET << std::endl;
-    std::cerr << RED << " -> COMPILING FAILED AT LEXER STAGE" << RESET
-              << std::endl;
-    lexingFailed = true;
-  }
-
-  // ------------ PARSING STAGE ------------
-  if (!lexingFailed) {
-    std::cout << "\n"
-              << YELLOW << "[STAGE 2] Syntax Analysis (SLR Parsing)..." << RESET
-              << std::endl;
-
-    std::cout << " -> Loading SLR Action Table & Production Rules..."
-              << std::endl;
-    ActionTableReader *tableReader =
-        new ActionTableReader("ProductionRules.txt");
-    auto actionTable = tableReader->read("SLR_ACTION_Table.csv");
-
-    tokenList.push_back(new Token("$", TokenType::DOLLAR_EOF));
-    std::cout << " -> Appended EOF token ($)." << std::endl;
-
-    std::cout << " -> Executing SLR Shift-Reduce Parsing..." << std::endl;
-    parsingPassed = parse.ParseTokens(tokenList);
-
-    if (parsingPassed) {
-      std::cout << GREEN
-                << " -> Syntax Analysis Complete. CST Successfully Constructed."
-                << RESET << std::endl;
-    } else {
-      std::cerr
-          << RED
-          << " -> Syntax Analysis Failed. Input program violates SPL grammar."
-          << RESET << std::endl;
-    }
-
-    for (auto &row : actionTable) {
-      for (auto action : row) {
-        delete action;
-      }
-    }
-    delete tableReader;
-  }
-
-  // ------------ SEMANTIC ANALYSIS (PHASE 2a) ------------
-  if (parsingPassed) {
-    std::cout << "\n"
-              << YELLOW
-              << "[STAGE 3] Semantic Analysis & Scope Resolution (Phase 2a)..."
+    std::cout << GREEN << "[STAGE 1] Lexical Analysis Passed ("
+              << tokenList.size() << " tokens)." << RESET << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << RED << "[STAGE 1] Lexical Analysis Failed: " << e.what()
               << RESET << std::endl;
+    delete chain;
+    return 1;
+  }
 
-    TreeBuilder *tree = parse.getTree();
-    if (tree && tree->getRoot()) {
-      std::cout << " -> Concrete Syntax Tree Root Node ID: "
-                << tree->getRoot()->id << std::endl;
-      std::cout
-          << " -> Traversing CST to build Symbol Table & resolve identifiers..."
-          << std::endl;
+  // ------------ STAGE 2: SYNTAX ANALYSIS ------------
+  ActionTableReader *tableReader = new ActionTableReader("ProductionRules.txt");
+  auto actionTable = tableReader->read("SLR_ACTION_Table.csv");
+  tokenList.push_back(new Token("$", TokenType::DOLLAR_EOF));
 
-      try {
-        ScopeTree scopeTree(*tree);
+  Parser parse;
+  bool parsingPassed = parse.ParseTokens(tokenList);
 
-        std::cout << " -> Writing transformed CST with unique internal "
-                     "identifiers to XML..."
-                  << std::endl;
-        tree->writeXML(tree->getRoot());
-
-        std::cout << GREEN
-                  << " -> Scope Resolution & Unique Renaming Succeeded."
-                  << RESET << std::endl;
-        std::cout << GREEN
-                  << " -> Transformed AST output written to 'tree.xml'."
-                  << RESET << std::endl;
-      } catch (const std::runtime_error &e) {
-        std::cerr << RED << " -> Semantic Error Detected: " << e.what() << RESET
-                  << std::endl;
-        std::cerr << RED << " -> COMPILING FAILED AT SEMANTIC STAGE" << RESET
-                  << std::endl;
-      }
-    } else {
-      std::cerr << RED << " -> CST generation yielded an empty tree root!"
-                << RESET << std::endl;
+  for (auto &row : actionTable) {
+    for (auto action : row) {
+      delete action;
     }
+  }
+  delete tableReader;
+
+  if (!parsingPassed) {
+    std::cerr << RED << "[STAGE 2] Syntax Analysis Failed." << RESET
+              << std::endl;
+    // Cleanup
+    for (auto token : tokenList)
+      delete token;
+    delete chain;
+    return 1;
+  }
+  std::cout << GREEN << "[STAGE 2] Syntax Analysis Passed." << RESET
+            << std::endl;
+
+  // ------------ STAGE 3: SEMANTIC ANALYSIS ------------
+  TreeBuilder *tree = parse.getTree();
+  if (!tree || !tree->getRoot()) {
+    std::cerr << RED << "[STAGE 3] Semantic Analysis Failed: Empty CST root."
+              << RESET << std::endl;
+    for (auto token : tokenList)
+      delete token;
+    delete chain;
+    return 1;
+  }
+
+  try {
+    ScopeTree scopeTree(*tree);
+    tree->writeXML(tree->getRoot());
+    std::cout << GREEN
+              << "[STAGE 3] Semantic Analysis & Scope Resolution Passed."
+              << RESET << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << RED << "[STAGE 3] Semantic Error: " << e.what() << RESET
+              << std::endl;
+    std::cout << "\n=============================================="
+              << std::endl;
+    std::cout << RED << "            COMPILATION FAILED                "
+              << RESET << std::endl;
+    std::cout << "==============================================\n"
+              << std::endl;
+
+    if (parse.getTree())
+      delete parse.getTree();
+    for (auto token : tokenList)
+      delete token;
+    delete chain;
+    return 1;
   }
 
   std::cout << "\n==============================================" << std::endl;
-  if (!lexingFailed && parsingPassed) {
-    std::cout << GREEN << "         COMPILATION COMPLETED SUCCESSFULLY    "
-              << RESET << std::endl;
-  } else {
-    std::cout << RED << "            COMPILATION FAILED                "
-              << RESET << std::endl;
-  }
+  std::cout << GREEN << "          COMPILATION COMPLETED SUCCESSFULLY  "
+            << RESET << std::endl;
   std::cout << "==============================================\n" << std::endl;
 
   // ------------ MEMORY MANAGEMENT ------------
-  std::cout << " -> Cleaning up allocated heap memory..." << std::endl;
-  if (parse.getTree()) {
+  if (parse.getTree())
     delete parse.getTree();
-  }
-
-  for (auto token : tokenList) {
+  for (auto token : tokenList)
     delete token;
-  }
   delete chain;
-  std::cout << " -> Memory cleanup finalized." << std::endl;
 
-  return (lexingFailed || !parsingPassed) ? 1 : 0;
+  return 0;
 }

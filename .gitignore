@@ -67,7 +67,7 @@ vcpkg_installed/
 Testing/
 .cache/
 
-# zed 
+# zed
 *.zed
 
 
@@ -75,3 +75,5 @@ build/
 .cache/
 compile_commands.json
 *.pcm
+
+.xml

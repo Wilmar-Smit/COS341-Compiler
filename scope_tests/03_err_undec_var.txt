@@ -1,0 +1,7 @@
+:
+num #test ( ) {
+    #a :
+    :
+    #a = add ( #undeclared 1 ) ;
+    return ( #a )
+} :

@@ -1,0 +1,7 @@
+:
+num #main ( ) {
+    #res :
+    :
+    #res = #nonExistent ( ) ;
+    return ( #res )
+} :

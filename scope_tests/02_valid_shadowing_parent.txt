@@ -1,0 +1,10 @@
+:
+num #globalvar :
+:
+num #func ( ) {
+    : 
+    num #localvar :
+    :
+    #localvar = add ( #globalvar 5 ) ;
+    return ( #localvar )
+} :

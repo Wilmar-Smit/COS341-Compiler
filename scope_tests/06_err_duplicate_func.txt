@@ -1,0 +1,9 @@
+:
+num #foo ( ) {
+    :
+    return ( 0 )
+}
+num #foo ( ) {
+    :
+    return ( 1 )
+} :

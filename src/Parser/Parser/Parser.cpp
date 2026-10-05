@@ -23,17 +23,12 @@ bool Parser::ParseTokens(vector<Token *> tokens) {
   try {
     auto accept = visitor->parseTokens(tokens);
 
-    if (accept) {
-      // return visitor . get composite tree
-    } else {
-      // throw exeption ? idk
-    }
+    return accept;
   } catch (runtime_error e) {
     std::cout << e.what() << std::endl;
     return false;
   }
-
-  return true;
+  return false;
 }
 
 // memory management

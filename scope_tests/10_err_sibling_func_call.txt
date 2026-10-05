@@ -1,0 +1,11 @@
+:
+num #helper ( ) {
+    :
+    return ( 10 )
+}
+num #caller ( ) {
+    #res :
+    :
+    #res = #helper ( ) ;
+    return ( #res )
+} :

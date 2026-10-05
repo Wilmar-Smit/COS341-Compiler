@@ -93,6 +93,7 @@ void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
   }
 
   // Universal check for identifier usages (nodes starting with '#')
+
   if (!node->symbol.empty() && node->symbol[0] == '#') {
     VariableSymbol var;
     FunctionSymbol func;
@@ -101,8 +102,13 @@ void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
     } else if (sym.lookupFunction(node->symbol, nextScopeId, func)) {
       node->symbol = func.systemName;
     } else {
-      throw std::runtime_error("Semantic Error: Undeclared identifier '" +
-                               node->symbol + "'");
+      if (sym.existsInAnyScope(node->symbol)) {
+        throw std::runtime_error("Semantic Error: Out of scope reference to '" +
+                                 node->symbol + "'");
+      } else {
+        throw std::runtime_error("Semantic Error: Undeclared identifier '" +
+                                 node->symbol + "'");
+      }
     }
   }
 

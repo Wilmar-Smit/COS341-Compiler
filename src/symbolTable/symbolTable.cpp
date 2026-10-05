@@ -85,3 +85,14 @@ bool SymbolTable::lookupFunction(const std::string &name, int scopeId,
   }
   return false;
 }
+bool SymbolTable::existsInAnyScope(const std::string &name) const {
+  for (const auto &pair : scopes) {
+    for (const auto &scope : pair.second) {
+      if (scope.variables.find(name) != scope.variables.end() ||
+          scope.functions.find(name) != scope.functions.end()) {
+        return true;
+      }
+    }
+  }
+  return false;
+}

@@ -38,7 +38,7 @@ private:
 
 public:
   SymbolTable();
-
+bool existsInAnyScope(const std::string &name) const;
   int createScope(int level, int parentId);
   Scope *getScope(int scopeId);
   const Scope *getScope(int scopeId) const;

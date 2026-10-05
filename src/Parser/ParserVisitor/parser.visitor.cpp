@@ -15,9 +15,7 @@ ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
                            vector<vector<ParserAction *>> &gotoTable,
                            std::stack<ParserStates> &stateStack,
                            TreeBuilder &tb)
-    : table(table), stateStack(stateStack), gotoTable(gotoTable), xml(tb) {
-  // keeps a reference to the same tables and stack as the parser
-}
+    : table(table), stateStack(stateStack), gotoTable(gotoTable), xml(tb) {}
 
 Token *ParseVisitor::currentToken() {
   if (this->tokenIndex < static_cast<int>(this->tokens.size())) {
@@ -74,7 +72,6 @@ void ParseVisitor::visit(ParserAction *action) {
 }
 
 void ParseVisitor::visit(ShiftAction *action) {
-
   this->stateStack.push(action->state);
   xml.shiftNode(*currentToken());
   this->tokenIndex++;
@@ -133,7 +130,8 @@ void ParseVisitor::visit(ErrorAction *action) {
   }
 
   std::stringstream ss;
-  ss << RED << "Parsing failed: Unexpected token of type " << tableTokenIndex
+  ss << RED << "Parsing failed: Unexpected token '" << lookahead->getCode()
+     << "' of type " << tableTokenIndex
      << " Being: " << patternFor(lookahead->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << "." << RESET;

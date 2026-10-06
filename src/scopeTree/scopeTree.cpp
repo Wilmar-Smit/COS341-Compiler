@@ -62,7 +62,6 @@ void ScopeTree::processFDecl(Node *node, int currentScopeId) {
     }
   }
 }
-
 void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
   if (!node)
     return;
@@ -84,29 +83,49 @@ void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
     return;
   }
 
-  // Handle scope blocks (BRANCH / LOOP)
   int nextScopeId = currentScopeId;
-  if (node->symbol == "BRANCH" || node->symbol == "LOOP") {
-    const Scope *parentScope = sym.getScope(currentScopeId);
-    int newLevel = parentScope ? parentScope->level + 1 : 2;
-    nextScopeId = sym.createScope(newLevel, currentScopeId);
+  // Note: BRANCH and LOOP scope creation was removed in Bug 1 fix
+
+  // Handle CALL nodes explicitly: the first child is a function name
+  if (node->symbol == "CALL") {
+    if (!node->children.empty() && node->children[0]) {
+      Node *funcNode = node->children[0];
+      if (!funcNode->symbol.empty() && funcNode->symbol[0] == '#') {
+        FunctionSymbol func;
+        if (sym.lookupFunction(funcNode->symbol, nextScopeId, func)) {
+          funcNode->symbol = func.systemName;
+        } else {
+          if (sym.existsInAnyScope(funcNode->symbol)) {
+            throw std::runtime_error(
+                "Semantic Error: Out of scope reference to function '" +
+                funcNode->symbol + "'");
+          } else {
+            throw std::runtime_error("Semantic Error: Undeclared function '" +
+                                     funcNode->symbol + "'");
+          }
+        }
+      }
+    }
+    // Traverse remaining children (e.g., arguments) normally
+    for (size_t i = 1; i < node->children.size(); ++i) {
+      buildScopeTree(node->children[i], nextScopeId);
+    }
+    return;
   }
 
-  // Universal check for identifier usages (nodes starting with '#')
-
+  // For all other nodes starting with '#', perform a strict VARIABLE-ONLY
+  // lookup
   if (!node->symbol.empty() && node->symbol[0] == '#') {
     VariableSymbol var;
-    FunctionSymbol func;
     if (sym.lookupVariable(node->symbol, nextScopeId, var)) {
       node->symbol = var.systemName;
-    } else if (sym.lookupFunction(node->symbol, nextScopeId, func)) {
-      node->symbol = func.systemName;
     } else {
       if (sym.existsInAnyScope(node->symbol)) {
-        throw std::runtime_error("Semantic Error: Out of scope reference to '" +
-                                 node->symbol + "'");
+        throw std::runtime_error(
+            "Semantic Error: Out of scope reference to variable '" +
+            node->symbol + "'");
       } else {
-        throw std::runtime_error("Semantic Error: Undeclared identifier '" +
+        throw std::runtime_error("Semantic Error: Undeclared variable '" +
                                  node->symbol + "'");
       }
     }
@@ -117,7 +136,6 @@ void ScopeTree::buildScopeTree(Node *node, int currentScopeId) {
     buildScopeTree(child, nextScopeId);
   }
 }
-
 void ScopeTree::processFType(Node *node, int currentScopeId) {
   if (!node)
     return;
@@ -136,7 +154,10 @@ void ScopeTree::processFType(Node *node, int currentScopeId) {
     }
   }
 
-  int funcScopeId = sym.createScope(1, currentScopeId);
+  // FIX: Compute scope level dynamically as parent level + 1
+  const Scope *parentScope = sym.getScope(currentScopeId);
+  int newLevel = parentScope ? parentScope->level + 1 : 1;
+  int funcScopeId = sym.createScope(newLevel, currentScopeId);
 
   // Process local variable declarations inside the function scope
   for (Node *child : node->children) {

@@ -1,0 +1,8 @@
+:
+num #recursive ( ) {
+    #res :
+    :
+    #res = #recursive ( ) ;
+    return ( #res )
+}
+:

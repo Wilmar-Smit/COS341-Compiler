@@ -32,7 +32,7 @@ void collectOperators(const Node *node, bool &hasMod, bool &hasDiv,
     collectOperators(child, hasMod, hasDiv, hasDecimal);
 }
 
-} // namespace
+}
 
 std::string semTypeToString(SemType type) {
   switch (type) {

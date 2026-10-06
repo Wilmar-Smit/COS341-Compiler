@@ -7,7 +7,7 @@
 
 enum class DataType { NUM, STRING, VOID };
 
-// Phase 2b type attributes (spec: every node starts as "unknown")
+// Phase 2b type attributes
 enum class SemType { UNKNOWN, NUMERIC, BOOLEAN, PROCEDURE, OK };
 
 struct VariableSymbol {

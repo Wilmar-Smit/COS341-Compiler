@@ -85,6 +85,15 @@ bool SymbolTable::lookupFunction(const std::string &name, int scopeId,
   }
   return false;
 }
+void SymbolTable::setNameType(const std::string &systemName, SemType type) {
+  nameTypes[systemName] = type;
+}
+
+SemType SymbolTable::getNameType(const std::string &systemName) const {
+  auto it = nameTypes.find(systemName);
+  return it != nameTypes.end() ? it->second : SemType::UNKNOWN;
+}
+
 bool SymbolTable::existsInAnyScope(const std::string &name) const {
   for (const auto &pair : scopes) {
     for (const auto &scope : pair.second) {

@@ -11,7 +11,8 @@ RESET="\033[0m"
 
 BUILD_DIR="build"
 EXEC="compiler"
-TEST_DIR="scope_tests"
+# Usage: ./scope_test.sh [test_dir]   (defaults to scope_tests)
+TEST_DIR="${1:-scope_tests}"
 
 echo -e "\n${CYAN}==============================================${RESET}"
 echo -e "${CYAN}        BUILDING COMPILER VIA MAKE           ${RESET}"
@@ -33,7 +34,7 @@ if [ ! -d "$TEST_DIR" ]; then
 fi
 
 echo -e "\n${CYAN}==============================================${RESET}"
-echo -e "${CYAN}        RUNNING PHASE 2a SCOPE SUITE         ${RESET}"
+echo -e "${CYAN}        RUNNING SUITE: ${TEST_DIR}${RESET}"
 echo -e "${CYAN}==============================================${RESET}\n"
 
 PASSED_COUNT=0

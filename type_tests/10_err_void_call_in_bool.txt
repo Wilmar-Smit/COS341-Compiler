@@ -1,0 +1,7 @@
+:
+void #pr ( ) {
+    :
+    :
+    return
+} :
+if eq ( #pr ( ) 1 ) then { nop ; } else { nop ; } ;

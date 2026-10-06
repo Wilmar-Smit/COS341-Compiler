@@ -1,0 +1,12 @@
+#x :
+void #pr ( ) {
+    :
+    :
+    return
+}
+num #f ( #a ) {
+    :
+    :
+    return ( #a )
+} :
+#x = #f ( #pr ( ) ) ;

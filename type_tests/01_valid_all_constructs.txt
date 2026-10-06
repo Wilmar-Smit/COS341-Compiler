@@ -1,0 +1,29 @@
+#x :
+void #pr ( #a ) {
+    :
+    :
+    print ( #a ) ;
+    return
+}
+num #f ( #a #b ) {
+    #r :
+    :
+    #r = add ( #a #b ) ;
+    return ( #r )
+} :
+#x = #f ( 1 2.5 ) ;
+#pr ( #x ) ;
+print "hi" ;
+comment "c" ;
+nop ;
+if and ( eq ( #x 1 ) not ( larger ( #x 2 ) ) ) then {
+    #x = neg ( #x ) ;
+} else {
+    nop ;
+} ;
+while lesser ( #x 3 ) do {
+    #x = mul ( #x 2 ) ;
+} ;
+do {
+    #x = sub ( #x 1 ) ;
+} until or ( eq ( 1 1 ) eq ( 2 2 ) ) ;

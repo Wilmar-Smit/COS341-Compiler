@@ -1,0 +1,8 @@
+#counter
+:
+num #looptest ( ) {
+    #i :
+    :
+    #i = 0 ;
+    return ( #i )
+} :

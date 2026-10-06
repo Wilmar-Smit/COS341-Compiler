@@ -11,30 +11,29 @@ const std::string GREEN = "\033[32m";
 const std::string RED = "\033[31m";
 const std::string RESET = "\033[0m";
 
-ParseVisitor::ParseVisitor(vector<vector<ParserAction*>>& table,
-  vector<vector<ParserAction*>>& gotoTable,
-  std::stack<ParserStates>& stateStack,
-  TreeBuilder& tb)
-  : table(table), stateStack(stateStack), gotoTable(gotoTable), xml(tb) {
-  // keeps a reference to the same tables and stack as the parser
-}
+ParseVisitor::ParseVisitor(vector<vector<ParserAction *>> &table,
+                           vector<vector<ParserAction *>> &gotoTable,
+                           std::stack<ParserStates> &stateStack,
+                           TreeBuilder &tb)
+    : table(table), stateStack(stateStack), gotoTable(gotoTable), xml(tb) {}
 
-Token* ParseVisitor::currentToken()
-{
+Token *ParseVisitor::currentToken() {
   if (this->tokenIndex < static_cast<int>(this->tokens.size())) {
     return this->tokens[this->tokenIndex];
   }
   return &this->endOfInputToken;
 }
 
-bool ParseVisitor::parseTokens(vector<Token*> tokens)
-{
+bool ParseVisitor::parseTokens(vector<Token *> tokens) {
   this->tokens = tokens;
-  try
-  {
-    while (!this->hitAcceptState)
-    {
-      Token* lookahead = currentToken();
+  try {
+    while (!this->hitAcceptState) {
+      Token *lookahead = currentToken();
+
+      if (!lookahead) {
+        throw std::runtime_error(
+            "parsing failed: unexpected end of input tokens.");
+      }
 
       if (lookahead->getCode() == " ") {
         this->tokenIndex++;
@@ -45,45 +44,46 @@ bool ParseVisitor::parseTokens(vector<Token*> tokens)
       int tableTokenIndex = static_cast<int>(lookahead->getType());
 
       auto action = table[StateIndex][tableTokenIndex];
+      if (!action) {
+        throw std::runtime_error("parsing failed: no valid action found in "
+                                 "action table for state and token.");
+      }
 
       action->AcceptVisitor(this);
     }
-  }
-  catch (std::runtime_error e)
-  {
+  } catch (const std::runtime_error &e) {
     std::cout << e.what() << std::endl;
+    return false;
+  } catch (const std::exception &e) {
+    std::cout << "parsing error: " << e.what() << std::endl;
     return false;
   }
 
-  if (hitAcceptState) {
+  if (this->hitAcceptState) {
     xml.writeXML(xml.getRoot());
+    return true;
   }
 
-  return this->hitAcceptState;
+  return false;
 }
 
-void ParseVisitor::visit(ParserAction* action)
-{
+void ParseVisitor::visit(ParserAction *action) {
   throw std::runtime_error("Visit should not be called on this abstract class");
 }
 
-void ParseVisitor::visit(ShiftAction* action) {
-
+void ParseVisitor::visit(ShiftAction *action) {
   this->stateStack.push(action->state);
   xml.shiftNode(*currentToken());
   this->tokenIndex++;
 }
 
-void ParseVisitor::visit(GotoAction* action) {
+void ParseVisitor::visit(GotoAction *action) {
   this->stateStack.push(action->state);
 }
 
-void ParseVisitor::visit(AcceptAction* action) {
-  this->hitAcceptState = true;
-}
+void ParseVisitor::visit(AcceptAction *action) { this->hitAcceptState = true; }
 
-void ParseVisitor::visit(ReduceAction* action)
-{
+void ParseVisitor::visit(ReduceAction *action) {
   int numToPop = action->rule.numberToPop;
   NonTerminal NT = action->rule.nonTerminal;
 
@@ -101,9 +101,9 @@ void ParseVisitor::visit(ReduceAction* action)
   gotoAction->AcceptVisitor(this);
 }
 
-void ParseVisitor::visit(ErrorAction* action) {
+void ParseVisitor::visit(ErrorAction *action) {
   int stateIndex = static_cast<int>(stateStack.top());
-  Token* lookahead = currentToken();
+  Token *lookahead = currentToken();
   int tableTokenIndex = static_cast<int>(lookahead->getType());
   std::stringstream possibleTokens;
   possibleTokens << GREEN << "\nPossible expressions";
@@ -130,7 +130,8 @@ void ParseVisitor::visit(ErrorAction* action) {
   }
 
   std::stringstream ss;
-  ss << RED << "Parsing failed: Unexpected token of type " << tableTokenIndex
+  ss << RED << "Parsing failed: Unexpected token '" << lookahead->getCode()
+     << "' of type " << tableTokenIndex
      << " Being: " << patternFor(lookahead->getType())
      << " encountered in parser state " << stateIndex << " at token index "
      << tokenIndex << "." << RESET;

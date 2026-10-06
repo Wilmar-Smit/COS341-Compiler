@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "TreeBuilder.h"
 #include "createParseTable.h"
 #include "parser.visitor.h"
 #include "state.enum.h"
@@ -9,30 +10,25 @@ Parser::Parser() {
   this->table = createParseTable();
   this->gotoTable = createGotoTable();
   this->stateStack.push(ParserStates::S0); // S0 pushed on
-  this->xml = TreeBuilder();
+  this->xml = new TreeBuilder();
   this->visitor = new ParseVisitor(
-    table, gotoTable,
-    stateStack,
-    xml
-  ); // does not manage memory these are just references
+      table, gotoTable, stateStack,
+      *xml); // does not manage memory these are just references
 }
+
+TreeBuilder *Parser::getTree() { return xml; }
 
 bool Parser::ParseTokens(vector<Token *> tokens) {
 
   try {
     auto accept = visitor->parseTokens(tokens);
 
-    if (accept) {
-      // return visitor . get composite tree
-    } else {
-      // throw exeption ? idk
-    }
+    return accept;
   } catch (runtime_error e) {
     std::cout << e.what() << std::endl;
     return false;
   }
-
-  return true;
+  return false;
 }
 
 // memory management

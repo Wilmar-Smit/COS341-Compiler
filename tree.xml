@@ -1,452 +1,208 @@
 <tree>
 	<root>
-		<id>66</id>
+		<id>31</id>
 		<content>SPL_PROG</content>
 		<children>
-			<child>64</child>
-			<child>65</child>
+			<child>29</child>
+			<child>30</child>
 		</children>
 	</root>
 	<node>
-		<id>64</id>
+		<id>29</id>
 		<content>P</content>
-		<parent>66</parent>
-		<children>
-			<child>2</child>
-			<child>3</child>
-			<child>4</child>
-			<child>5</child>
-			<child>63</child>
-		</children>
-	</node>
-	<node>
-		<id>2</id>
-		<content>V_DECL</content>
-		<parent>64</parent>
+		<parent>31</parent>
 		<children>
 			<child>0</child>
 			<child>1</child>
+			<child>26</child>
+			<child>27</child>
+			<child>28</child>
 		</children>
 	</node>
 	<node>
 		<id>0</id>
-		<content>#pling</content>
-		<parent>2</parent>
+		<content>V_DECL</content>
+		<parent>29</parent>
 	</node>
 	<node>
 		<id>1</id>
-		<content>V_DECL</content>
-		<parent>2</parent>
+		<content>:</content>
+		<parent>29</parent>
+	</node>
+	<node>
+		<id>26</id>
+		<content>F_DECL</content>
+		<parent>29</parent>
+		<children>
+			<child>24</child>
+			<child>25</child>
+		</children>
+	</node>
+	<node>
+		<id>24</id>
+		<content>F_TYPE</content>
+		<parent>26</parent>
+		<children>
+			<child>2</child>
+			<child>3</child>
+			<child>4</child>
+			<child>7</child>
+			<child>8</child>
+			<child>9</child>
+			<child>17</child>
+			<child>18</child>
+			<child>19</child>
+			<child>21</child>
+			<child>22</child>
+			<child>23</child>
+		</children>
+	</node>
+	<node>
+		<id>2</id>
+		<content>num</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>3</id>
-		<content>:</content>
-		<parent>64</parent>
+		<content>#process</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>4</id>
-		<content>F_DECL</content>
-		<parent>64</parent>
-	</node>
-	<node>
-		<id>5</id>
-		<content>:</content>
-		<parent>64</parent>
-	</node>
-	<node>
-		<id>63</id>
-		<content>ALGO</content>
-		<parent>64</parent>
-		<children>
-			<child>55</child>
-			<child>56</child>
-			<child>62</child>
-		</children>
-	</node>
-	<node>
-		<id>55</id>
-		<content>INSTR</content>
-		<parent>63</parent>
-		<children>
-			<child>54</child>
-		</children>
-	</node>
-	<node>
-		<id>54</id>
-		<content>BRANCH</content>
-		<parent>55</parent>
-		<children>
-			<child>6</child>
-			<child>18</child>
-			<child>19</child>
-			<child>20</child>
-			<child>25</child>
-			<child>26</child>
-			<child>27</child>
-			<child>28</child>
-			<child>52</child>
-			<child>53</child>
-		</children>
-	</node>
-	<node>
-		<id>6</id>
-		<content>if</content>
-		<parent>54</parent>
-	</node>
-	<node>
-		<id>18</id>
-		<content>BOOL</content>
-		<parent>54</parent>
-		<children>
-			<child>7</child>
-			<child>8</child>
-			<child>16</child>
-			<child>17</child>
-		</children>
+		<content>(</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>7</id>
-		<content>not</content>
-		<parent>18</parent>
-	</node>
-	<node>
-		<id>8</id>
-		<content>(</content>
-		<parent>18</parent>
-	</node>
-	<node>
-		<id>16</id>
-		<content>BOOL</content>
-		<parent>18</parent>
+		<content>V_DECL</content>
+		<parent>24</parent>
 		<children>
-			<child>9</child>
-			<child>10</child>
-			<child>12</child>
-			<child>14</child>
-			<child>15</child>
+			<child>5</child>
+			<child>6</child>
 		</children>
 	</node>
 	<node>
-		<id>9</id>
-		<content>lesser</content>
-		<parent>16</parent>
+		<id>5</id>
+		<content>#paramval</content>
+		<parent>7</parent>
 	</node>
 	<node>
-		<id>10</id>
-		<content>(</content>
-		<parent>16</parent>
+		<id>6</id>
+		<content>V_DECL</content>
+		<parent>7</parent>
+	</node>
+	<node>
+		<id>8</id>
+		<content>)</content>
+		<parent>24</parent>
+	</node>
+	<node>
+		<id>9</id>
+		<content>{</content>
+		<parent>24</parent>
+	</node>
+	<node>
+		<id>17</id>
+		<content>P</content>
+		<parent>24</parent>
+		<children>
+			<child>12</child>
+			<child>13</child>
+			<child>14</child>
+			<child>15</child>
+			<child>16</child>
+		</children>
 	</node>
 	<node>
 		<id>12</id>
-		<content>TERM</content>
-		<parent>16</parent>
+		<content>V_DECL</content>
+		<parent>17</parent>
 		<children>
+			<child>10</child>
 			<child>11</child>
 		</children>
 	</node>
 	<node>
-		<id>11</id>
-		<content>0</content>
+		<id>10</id>
+		<content>#paramval</content>
 		<parent>12</parent>
 	</node>
 	<node>
-		<id>14</id>
-		<content>TERM</content>
-		<parent>16</parent>
-		<children>
-			<child>13</child>
-		</children>
+		<id>11</id>
+		<content>V_DECL</content>
+		<parent>12</parent>
 	</node>
 	<node>
 		<id>13</id>
-		<content>#plong</content>
-		<parent>14</parent>
+		<content>:</content>
+		<parent>17</parent>
+	</node>
+	<node>
+		<id>14</id>
+		<content>F_DECL</content>
+		<parent>17</parent>
 	</node>
 	<node>
 		<id>15</id>
-		<content>)</content>
-		<parent>16</parent>
+		<content>:</content>
+		<parent>17</parent>
 	</node>
 	<node>
-		<id>17</id>
-		<content>)</content>
-		<parent>18</parent>
+		<id>16</id>
+		<content>ALGO</content>
+		<parent>17</parent>
+	</node>
+	<node>
+		<id>18</id>
+		<content>return</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>19</id>
-		<content>then</content>
-		<parent>54</parent>
-	</node>
-	<node>
-		<id>20</id>
-		<content>{</content>
-		<parent>54</parent>
-	</node>
-	<node>
-		<id>25</id>
-		<content>ALGO</content>
-		<parent>54</parent>
-		<children>
-			<child>22</child>
-			<child>23</child>
-			<child>24</child>
-		</children>
-	</node>
-	<node>
-		<id>22</id>
-		<content>INSTR</content>
-		<parent>25</parent>
-		<children>
-			<child>21</child>
-		</children>
+		<content>(</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>21</id>
-		<content>nop</content>
-		<parent>22</parent>
+		<content>TERM</content>
+		<parent>24</parent>
+		<children>
+			<child>20</child>
+		</children>
+	</node>
+	<node>
+		<id>20</id>
+		<content>#paramval</content>
+		<parent>21</parent>
+	</node>
+	<node>
+		<id>22</id>
+		<content>)</content>
+		<parent>24</parent>
 	</node>
 	<node>
 		<id>23</id>
-		<content>;</content>
-		<parent>25</parent>
-	</node>
-	<node>
-		<id>24</id>
-		<content>ALGO</content>
-		<parent>25</parent>
-	</node>
-	<node>
-		<id>26</id>
 		<content>}</content>
-		<parent>54</parent>
+		<parent>24</parent>
+	</node>
+	<node>
+		<id>25</id>
+		<content>F_DECL</content>
+		<parent>26</parent>
 	</node>
 	<node>
 		<id>27</id>
-		<content>else</content>
-		<parent>54</parent>
+		<content>:</content>
+		<parent>29</parent>
 	</node>
 	<node>
 		<id>28</id>
-		<content>{</content>
-		<parent>54</parent>
-	</node>
-	<node>
-		<id>52</id>
 		<content>ALGO</content>
-		<parent>54</parent>
-		<children>
-			<child>45</child>
-			<child>46</child>
-			<child>51</child>
-		</children>
-	</node>
-	<node>
-		<id>45</id>
-		<content>INSTR</content>
-		<parent>52</parent>
-		<children>
-			<child>29</child>
-			<child>44</child>
-		</children>
-	</node>
-	<node>
-		<id>29</id>
-		<content>print</content>
-		<parent>45</parent>
-	</node>
-	<node>
-		<id>44</id>
-		<content>OUTP</content>
-		<parent>45</parent>
-		<children>
-			<child>30</child>
-			<child>42</child>
-			<child>43</child>
-		</children>
+		<parent>29</parent>
 	</node>
 	<node>
 		<id>30</id>
-		<content>(</content>
-		<parent>44</parent>
-	</node>
-	<node>
-		<id>42</id>
-		<content>TERM</content>
-		<parent>44</parent>
-		<children>
-			<child>41</child>
-		</children>
-	</node>
-	<node>
-		<id>41</id>
-		<content>CALL</content>
-		<parent>42</parent>
-		<children>
-			<child>31</child>
-			<child>32</child>
-			<child>39</child>
-			<child>40</child>
-		</children>
-	</node>
-	<node>
-		<id>31</id>
-		<content>#foo</content>
-		<parent>41</parent>
-	</node>
-	<node>
-		<id>32</id>
-		<content>(</content>
-		<parent>41</parent>
-	</node>
-	<node>
-		<id>39</id>
-		<content>INPUT</content>
-		<parent>41</parent>
-		<children>
-			<child>34</child>
-			<child>38</child>
-		</children>
-	</node>
-	<node>
-		<id>34</id>
-		<content>TERM</content>
-		<parent>39</parent>
-		<children>
-			<child>33</child>
-		</children>
-	</node>
-	<node>
-		<id>33</id>
-		<content>777</content>
-		<parent>34</parent>
-	</node>
-	<node>
-		<id>38</id>
-		<content>INPUT</content>
-		<parent>39</parent>
-		<children>
-			<child>36</child>
-			<child>37</child>
-		</children>
-	</node>
-	<node>
-		<id>36</id>
-		<content>TERM</content>
-		<parent>38</parent>
-		<children>
-			<child>35</child>
-		</children>
-	</node>
-	<node>
-		<id>35</id>
-		<content>99</content>
-		<parent>36</parent>
-	</node>
-	<node>
-		<id>37</id>
-		<content>INPUT</content>
-		<parent>38</parent>
-	</node>
-	<node>
-		<id>40</id>
-		<content>)</content>
-		<parent>41</parent>
-	</node>
-	<node>
-		<id>43</id>
-		<content>)</content>
-		<parent>44</parent>
-	</node>
-	<node>
-		<id>46</id>
-		<content>;</content>
-		<parent>52</parent>
-	</node>
-	<node>
-		<id>51</id>
-		<content>ALGO</content>
-		<parent>52</parent>
-		<children>
-			<child>48</child>
-			<child>49</child>
-			<child>50</child>
-		</children>
-	</node>
-	<node>
-		<id>48</id>
-		<content>INSTR</content>
-		<parent>51</parent>
-		<children>
-			<child>47</child>
-		</children>
-	</node>
-	<node>
-		<id>47</id>
-		<content>nop</content>
-		<parent>48</parent>
-	</node>
-	<node>
-		<id>49</id>
-		<content>;</content>
-		<parent>51</parent>
-	</node>
-	<node>
-		<id>50</id>
-		<content>ALGO</content>
-		<parent>51</parent>
-	</node>
-	<node>
-		<id>53</id>
-		<content>}</content>
-		<parent>54</parent>
-	</node>
-	<node>
-		<id>56</id>
-		<content>;</content>
-		<parent>63</parent>
-	</node>
-	<node>
-		<id>62</id>
-		<content>ALGO</content>
-		<parent>63</parent>
-		<children>
-			<child>59</child>
-			<child>60</child>
-			<child>61</child>
-		</children>
-	</node>
-	<node>
-		<id>59</id>
-		<content>INSTR</content>
-		<parent>62</parent>
-		<children>
-			<child>57</child>
-			<child>58</child>
-		</children>
-	</node>
-	<node>
-		<id>57</id>
-		<content>comment</content>
-		<parent>59</parent>
-	</node>
-	<node>
-		<id>58</id>
-		<content>"steampunk"</content>
-		<parent>59</parent>
-	</node>
-	<node>
-		<id>60</id>
-		<content>;</content>
-		<parent>62</parent>
-	</node>
-	<node>
-		<id>61</id>
-		<content>ALGO</content>
-		<parent>62</parent>
-	</node>
-	<node>
-		<id>65</id>
 		<content>$</content>
-		<parent>66</parent>
+		<parent>31</parent>
 	</node>
 </tree>

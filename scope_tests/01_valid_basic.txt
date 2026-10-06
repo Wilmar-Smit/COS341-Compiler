@@ -1,0 +1,7 @@
+:
+num #add ( #a #b ) {
+    #res :
+    :
+    #res = add ( #a #b ) ;
+    return ( #res )
+} :

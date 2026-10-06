@@ -1,0 +1,13 @@
+:
+num #funca ( ) {
+    :
+    num #funcb ( ) {
+        #res :
+        :
+        #res = #funca ( ) ;
+        return ( #res )
+    }
+    :
+    return ( 0 )
+}
+:

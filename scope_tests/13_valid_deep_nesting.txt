@@ -1,0 +1,19 @@
+:
+num #levelone ( ) {
+    #x :
+    num #leveltwo ( ) {
+        #y :
+
+        num #levelthree ( ) {
+            :
+            :
+            return ( 3 )
+        }
+        :
+        #y = 2 ;
+        return ( #y )
+    } :
+    #x = 1 ;
+    return ( #x )
+}
+:

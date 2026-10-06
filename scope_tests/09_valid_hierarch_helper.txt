@@ -1,0 +1,12 @@
+:
+num #outer ( ) {
+    #innerres :
+    num #helper ( ) {
+        :
+        :
+        return ( 42 )
+    } :
+
+    #innerres = #helper ( ) ;
+    return ( #innerres )
+} :

@@ -3,9 +3,9 @@
 
 #include "../ParserActions/parser.actions.h"
 #include "../StateEnums/state.enum.h"
+#include "TreeBuilder.h"
 #include "parser.visitor.h"
 #include "token.h"
-#include "TreeBuilder.h"
 
 #include <stack>
 #include <vector>
@@ -25,8 +25,8 @@ private:
       gotoTable; // gets filled in by the goto table function
 
   stack<ParserStates> stateStack; // looks up what the next state is
-  
-  TreeBuilder xml;
+
+  TreeBuilder *xml;
 
   /**
    * @brief The visitor goes through the parse table on command of the stack
@@ -41,6 +41,7 @@ public:
   Parser();
   ~Parser();
   bool ParseTokens(vector<Token *> tokens);
+  TreeBuilder *getTree();
 };
 
 #endif

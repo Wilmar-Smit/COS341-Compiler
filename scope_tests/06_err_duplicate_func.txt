@@ -1,0 +1,13 @@
+:
+num #myfunc ( ) {
+    :
+    :
+    return ( 0 )
+}
+num #myfunc ( ) {
+    :
+    :
+    return ( 1 )
+}
+
+:

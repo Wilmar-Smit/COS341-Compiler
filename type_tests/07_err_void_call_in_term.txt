@@ -1,0 +1,7 @@
+#x :
+void #pr ( ) {
+    :
+    :
+    return
+} :
+#x = #pr ( ) ;

@@ -7,6 +7,7 @@
 #include "fileReader/filereader.h"
 #include "fileReader/parseTableReader.h"
 #include "scopeTree/scopeTree.h"
+#include "typeChecker/typeChecker.h"
 #include "token.h"
 #include "tokenHandler.h"
 #include "tokens/genericTokenHandler/generic.handler.h"
@@ -84,15 +85,22 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  int semanticStage = 3;
   try {
     ScopeTree scopeTree(*tree);
     tree->writeXML(tree->getRoot());
     std::cout << GREEN
               << "[STAGE 3] Semantic Analysis & Scope Resolution Passed."
               << RESET << std::endl;
-  } catch (const std::exception &e) {
-    std::cerr << RED << "[STAGE 3] Semantic Error: " << e.what() << RESET
+
+    // ------------ STAGE 4: TYPE ANALYSIS ------------
+    semanticStage = 4;
+    TypeChecker typeChecker(tree->getRoot(), scopeTree.getSymbolTable());
+    std::cout << GREEN << "[STAGE 4] Type Analysis Passed." << RESET
               << std::endl;
+  } catch (const std::exception &e) {
+    std::cerr << RED << "[STAGE " << semanticStage
+              << "] Semantic Error: " << e.what() << RESET << std::endl;
     std::cout << "\n=============================================="
               << std::endl;
     std::cout << RED << "            COMPILATION FAILED                "

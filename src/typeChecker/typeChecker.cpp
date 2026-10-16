@@ -80,6 +80,9 @@ void TypeChecker::checkFloatIntegerConflict(Node *root) {
     typeError("A float-integer-conflict might perhaps be possible");
   if (hasMod && hasDecimal)
     typeError("program uses mod, so no number may contain a decimal dot");
+
+  // a dot-free number is also a valid float, so only mod forces integers
+  sym.setNumberMode(hasMod ? NumberMode::INTEGER : NumberMode::FLOAT);
 }
 
 // SPL_PROG -> P $

@@ -1,0 +1,18 @@
+src/codeGenerator/CodeGenerator.h
+  h_94c952a9e14c58 1-37
+src/codeGenerator/CodeGenerator.cpp
+  h_94c952a9e14c58 1-84
+src/symbolTable/symbolTable.h
+  h_94c952a9e14c58 46,48-49,51-52,54-55,57-58,60-61
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "95d5602c982c0ba7ff23cf3ffb88ec17147ae3a4",
+  "prompts": {},
+  "humans": {
+    "h_94c952a9e14c58": {
+      "author": "Swe-yy <u24584585@tuks.co.za>"
+    }
+  }
+}

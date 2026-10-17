@@ -43,22 +43,22 @@ private:
 
 public:
   SymbolTable();
-bool existsInAnyScope(const std::string &name) const;
+  bool existsInAnyScope(const std::string& name) const;
   int createScope(int level, int parentId);
-  Scope *getScope(int scopeId);
-  const Scope *getScope(int scopeId) const;
+  Scope* getScope(int scopeId);
+  const Scope* getScope(int scopeId) const;
 
-  bool addVariable(int scopeId, VariableSymbol &symbol);
-  bool addFunction(int scopeId, FunctionSymbol &symbol);
+  bool addVariable(int scopeId, VariableSymbol& symbol);
+  bool addFunction(int scopeId, FunctionSymbol& symbol);
 
-  bool lookupVariable(const std::string &name, int startScopeId,
-                      VariableSymbol &outSymbol) const;
+  bool lookupVariable(const std::string& name, int startScopeId,
+    VariableSymbol& outSymbol) const;
 
-  bool lookupFunction(const std::string &name, int startScopeId,
-                      FunctionSymbol &outSymbol) const;
+  bool lookupFunction(const std::string& name, int startScopeId,
+    FunctionSymbol& outSymbol) const;
 
-  void setNameType(const std::string &systemName, SemType type);
-  SemType getNameType(const std::string &systemName) const;
+  void setNameType(const std::string& systemName, SemType type);
+  SemType getNameType(const std::string& systemName) const;
 };
 
 #endif // SYMBOL_TABLE_H

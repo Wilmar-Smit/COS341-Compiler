@@ -85,9 +85,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
+  // typeChecker holds a reference into scopeTree, so delete it first.
+  ScopeTree *scopeTree = nullptr;
+  TypeChecker *typeChecker = nullptr;
+
   int semanticStage = 3;
   try {
-    ScopeTree scopeTree(*tree);
+    scopeTree = new ScopeTree(*tree);
     tree->writeXML(tree->getRoot());
     std::cout << GREEN
               << "[STAGE 3] Semantic Analysis & Scope Resolution Passed."
@@ -95,8 +99,11 @@ int main(int argc, char *argv[]) {
 
     // ------------ STAGE 4: TYPE ANALYSIS ------------
     semanticStage = 4;
-    TypeChecker typeChecker(tree->getRoot(), scopeTree.getSymbolTable());
-    std::cout << GREEN << "[STAGE 4] Type Analysis Passed." << RESET
+    typeChecker = new TypeChecker(tree->getRoot(), scopeTree->getSymbolTable());
+    bool isInteger =
+        scopeTree->getSymbolTable().getNumberMode() == NumberMode::INTEGER;
+    std::cout << GREEN << "[STAGE 4] Type Analysis Passed ("
+              << (isInteger ? "integer" : "float") << " program)." << RESET
               << std::endl;
   } catch (const std::exception &e) {
     std::cerr << RED << "[STAGE " << semanticStage
@@ -108,6 +115,8 @@ int main(int argc, char *argv[]) {
     std::cout << "==============================================\n"
               << std::endl;
 
+    delete typeChecker;
+    delete scopeTree;
     if (parse.getTree())
       delete parse.getTree();
     for (auto token : tokenList)
@@ -122,6 +131,8 @@ int main(int argc, char *argv[]) {
   std::cout << "==============================================\n" << std::endl;
 
   // ------------ MEMORY MANAGEMENT ------------
+  delete typeChecker;
+  delete scopeTree;
   if (parse.getTree())
     delete parse.getTree();
   for (auto token : tokenList)

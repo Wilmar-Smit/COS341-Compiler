@@ -1,0 +1,21 @@
+src/symbolTable/symbolTable.h
+  h_94c952a9e14c58 13-15,46,66-68
+  h_94c952a9e14c58 64-65
+src/main.cpp
+  h_94c952a9e14c58 88-91,94,102-106,118-119,134-135
+src/symbolTable/symbolTable.cpp
+  h_94c952a9e14c58 97-100
+src/typeChecker/typeChecker.cpp
+  h_94c952a9e14c58 83-85
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5c4d87f43fdb83abd6ab5ce9c16108ba913e2b1d",
+  "prompts": {},
+  "humans": {
+    "h_94c952a9e14c58": {
+      "author": "Swe-yy <u24584585@tuks.co.za>"
+    }
+  }
+}

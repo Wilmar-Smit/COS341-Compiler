@@ -31,6 +31,8 @@ private:
   std::string genOr(Node *node, const std::string &trueLabel,
                     const std::string &falseLabel);
   std::string genBranch(Node *node);
+  std::string genP(Node *node);
+  std::string genVDecl(Node *node) const;
   std::string genLoop(Node *node);
   std::string genTestLoop(Node *boolNode, Node *algo, bool untilForm);
   std::string genRepeatLoop(Node *boolNode, Node *algo, bool whileForm);
@@ -48,6 +50,7 @@ public:
   std::string genTerm(Node *node, const std::string &resultVar);
   std::string genBool(Node *node, const std::string &trueLabel,
                       const std::string &falseLabel);
+  std::string genProgram(Node *root);
 };
 
 #endif // CODE_GEN_H

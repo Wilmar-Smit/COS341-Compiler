@@ -38,6 +38,19 @@ const std::array<std::pair<std::size_t, const char *>, 7> BRANCH_FIXED = {{
     {0, "if"}, {2, "then"}, {3, "{"}, {5, "}"}, {6, "else"}, {7, "{"},
     {9, "}"}}};
 
+constexpr std::size_t PROG_SIZE = 2;
+constexpr std::size_t PROG_P = 0;
+constexpr std::size_t PROG_END = 1;
+
+constexpr std::size_t P_SIZE = 5;
+constexpr std::size_t P_VDECL = 0;
+constexpr std::size_t P_FIRST_COLON = 1;
+constexpr std::size_t P_FDECL = 2;
+constexpr std::size_t P_SECOND_COLON = 3;
+constexpr std::size_t P_ALGO = 4;
+
+constexpr std::size_t DECL_SIZE = 2;
+
 constexpr std::size_t LOOP_SIZE = 6;
 constexpr std::size_t LOOP_TEST_BOOL = 1;
 constexpr std::size_t LOOP_TEST_ALGO = 4;
@@ -125,6 +138,17 @@ const std::string &condKind(const Node *cond) {
   if (kind != "while" && kind != "until")
     malformed("COND expected while or until but found " + kind);
   return kind;
+}
+
+// F_DECL -> EPSILON | F_TYPE F_DECL
+std::string genFDecl(const Node *node) {
+  expectNode(node, "F_DECL");
+  if (node->children.empty())
+    return " ";
+
+  expectSize(node, DECL_SIZE);
+  unsupported("function declarations",
+              "Phase 3b (function code-mine and inlining)");
 }
 
 std::string labelLine(const std::string &label) {
@@ -473,4 +497,62 @@ std::string CodeGen::genRepeatLoop(Node *boolNode, Node *algo,
 
   return bodyLabel + " : /* do */" + NEWLINE + bodyCode + ";" + NEWLINE +
          "/* while */" + NEWLINE + decision + exitLabel + " : /* exit */";
+}
+
+// SPL_PROG -> P $
+std::string CodeGen::genProgram(Node *root) {
+  expectNode(root, "SPL_PROG");
+  expectSize(root, PROG_SIZE);
+  if (root->children[PROG_END]->symbol != "$")
+    malformed("SPL_PROG expected '$' after P");
+
+  return genP(root->children[PROG_P]) + NEWLINE +
+         "return 0; } /* end of executable C */";
+}
+
+// P -> V_DECL : F_DECL : ALGO
+std::string CodeGen::genP(Node *node) {
+  expectNode(node, "P");
+  expectSize(node, P_SIZE);
+  if (node->children[P_FIRST_COLON]->symbol != ":" ||
+      node->children[P_SECOND_COLON]->symbol != ":")
+    malformed("P expected ':' between its parts");
+
+  std::string out =
+      "/* begin of the non-executable code-mine for later inlining */";
+  out += NEWLINE;
+  out += genFDecl(node->children[P_FDECL]);
+  out += NEWLINE;
+  out += "/* end of the non-executable code-mine */";
+  out += NEWLINE;
+  out += "/* begin of executable C code */";
+  out += NEWLINE;
+  out += "#include <iostream>";
+  out += NEWLINE;
+  out += "int main()";
+  out += NEWLINE;
+  out += "{";
+  out += NEWLINE;
+  out += genVDecl(node->children[P_VDECL]);
+  out += NEWLINE;
+  out += genAlgo(node->children[P_ALGO]);
+  return out;
+}
+
+// V_DECL -> EPSILON | NAME V_DECL
+std::string CodeGen::genVDecl(Node *node) const {
+  std::string out;
+  while (true) {
+    expectNode(node, "V_DECL");
+    if (node->children.empty())
+      return out + " ";
+
+    expectSize(node, DECL_SIZE);
+    const Node *name = node->children[0];
+    if (!name->children.empty() || name->symbol.empty())
+      malformed("V_DECL expected a NAME");
+
+    out += declare(name->symbol);
+    node = node->children[1];
+  }
 }

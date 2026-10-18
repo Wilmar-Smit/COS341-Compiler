@@ -1,9 +1,11 @@
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include "Parser.h"
+#include "codegen/codeGen.h"
 #include "fileReader/filereader.h"
 #include "fileReader/parseTableReader.h"
 #include "scopeTree/scopeTree.h"
@@ -17,6 +19,35 @@ const std::string RED = "\033[31m";
 const std::string YELLOW = "\033[33m";
 const std::string CYAN = "\033[36m";
 const std::string RESET = "\033[0m";
+
+enum class CodeGenResult { Generated, Skipped, Failed };
+
+// Skipping on CodeGenUnsupported is temporary: until Phase 3b, valid programs
+// with functions must keep compiling with exit code 0.
+CodeGenResult runCodeGeneration(Node *root, const std::string &outputName) {
+  try {
+    CodeGen codeGen(determineNumType(root));
+    std::string generated = codeGen.genProgram(root);
+
+    std::ofstream outputFile(outputName);
+    if (!outputFile.is_open()) {
+      throw std::runtime_error("cannot open output file: " + outputName);
+    }
+    outputFile << generated << "\n";
+    outputFile.close();
+    std::cout << GREEN << "[STAGE 5] Code Generation Passed. Output written to "
+              << outputName << "." << RESET << std::endl;
+    return CodeGenResult::Generated;
+  } catch (const CodeGenUnsupported &e) {
+    std::cout << YELLOW << "[STAGE 5] Code generation skipped: " << e.what()
+              << RESET << std::endl;
+    return CodeGenResult::Skipped;
+  } catch (const std::exception &e) {
+    std::cerr << RED << "[STAGE 5] Code Generation Failed: " << e.what()
+              << RESET << std::endl;
+    return CodeGenResult::Failed;
+  }
+}
 
 int main(int argc, char *argv[]) {
   std::string filename = argc > 1 ? argv[1] : "input.txt";
@@ -112,6 +143,18 @@ int main(int argc, char *argv[]) {
       delete parse.getTree();
     for (auto token : tokenList)
       delete token;
+    delete chain;
+    return 1;
+  }
+
+  // ------------ STAGE 5: CODE GENERATION ------------
+  std::string outputName = argc > 2 ? argv[2] : "output.cpp";
+  if (runCodeGeneration(tree->getRoot(), outputName) ==
+      CodeGenResult::Failed) {
+    delete tree;
+    for (auto *token : tokenList) {
+      delete token;
+    }
     delete chain;
     return 1;
   }

@@ -1,6 +1,7 @@
 #include "codeGen.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <utility>
 
@@ -23,13 +24,25 @@ constexpr std::size_t ASSIGN_NAME = 0;
 constexpr std::size_t ASSIGN_EQUALS = 1;
 constexpr std::size_t ASSIGN_TERM = 2;
 
+constexpr std::size_t BOOL_NOT_SIZE = 4;
+constexpr std::size_t BOOL_BINARY_SIZE = 5;
+constexpr std::size_t BOOL_FIRST_OPERAND = 2;
+constexpr std::size_t BOOL_SECOND_OPERAND = 3;
+
+constexpr std::size_t BRANCH_SIZE = 10;
+constexpr std::size_t BRANCH_BOOL = 1;
+constexpr std::size_t BRANCH_THEN = 4;
+constexpr std::size_t BRANCH_ELSE = 8;
+const std::array<std::pair<std::size_t, const char *>, 7> BRANCH_FIXED = {{
+    {0, "if"}, {2, "then"}, {3, "{"}, {5, "}"}, {6, "else"}, {7, "{"},
+    {9, "}"}}};
+
 constexpr std::size_t TERM_LEAF_SIZE = 1;
 constexpr std::size_t TERM_UNARY_SIZE = 4;
 constexpr std::size_t TERM_BINARY_SIZE = 5;
 constexpr std::size_t TERM_FIRST_OPERAND = 2;
 constexpr std::size_t TERM_SECOND_OPERAND = 3;
 
-const char *const PLANNED_BRANCH = "step 3";
 const char *const PLANNED_LOOP = "step 4";
 const char *const PLANNED_CALL = "Phase 3b (function calls via inlining)";
 
@@ -83,6 +96,37 @@ std::string binaryOperator(const std::string &opName) {
   if (opName == "mul")
     return "*";
   malformed("unknown operator '" + opName + "' in TERM");
+}
+
+std::string labelLine(const std::string &label) {
+  return label + " :" + NEWLINE;
+}
+
+std::string gotoLine(const std::string &label) {
+  return "goto " + label + ";" + NEWLINE;
+}
+
+std::string comparisonOperator(const std::string &opName) {
+  if (opName == "eq")
+    return "==";
+  if (opName == "larger")
+    return ">";
+  if (opName == "lesser")
+    return "<";
+  malformed("unknown comparison '" + opName + "' in BOOL");
+}
+
+// and is the only construct that jumps to the false label, and or hands it to
+// its operands, so these are the ones that cannot be the first half of an or
+bool jumpsToFalseLabel(const Node *node) {
+  if (node->children.size() != BOOL_BINARY_SIZE)
+    return false;
+  const std::string &opName = node->children[0]->symbol;
+  if (opName == "and")
+    return true;
+  return opName == "or" &&
+         (jumpsToFalseLabel(node->children[BOOL_FIRST_OPERAND]) ||
+          jumpsToFalseLabel(node->children[BOOL_SECOND_OPERAND]));
 }
 
 bool needsFloat(const Node *node) {
@@ -159,8 +203,10 @@ std::string CodeGen::genInstr(Node *node) {
     expectSize(node, KEYWORD_ONLY_SIZE);
     return genAssign(node->children[0]);
   }
-  if (kind == "BRANCH")
-    unsupported("BRANCH", PLANNED_BRANCH);
+  if (kind == "BRANCH") {
+    expectSize(node, KEYWORD_ONLY_SIZE);
+    return genBranch(node->children[0]);
+  }
   if (kind == "LOOP")
     unsupported("LOOP", PLANNED_LOOP);
   if (kind == "CALL")
@@ -246,4 +292,105 @@ std::string CodeGen::genBinary(Node *node, const std::string &resultVar) {
   out += genTerm(node->children[TERM_SECOND_OPERAND], right);
   return out + resultVar + " = " + left + " " + opSymbol + " " + right + ";" +
          NEWLINE;
+}
+
+// BOOL -> not ( BOOL ) | and|or ( BOOL BOOL ) | eq|larger|lesser ( TERM TERM )
+//
+// The spec swaps the labels for not and rewrites and as not/not. With one
+// conditional jump and fall-through that puts the fall-through on the wrong
+// label (a while written as until-not would run its body either way, and
+// and would behave like or), so those two use fresh local labels instead.
+// or additionally needs its own label when its first operand contains an and,
+// because that operand's goto-false would skip the second operand.
+std::string CodeGen::genBool(Node *node, const std::string &trueLabel,
+                             const std::string &falseLabel) {
+  expectNode(node, "BOOL");
+  if (node->children.size() == BOOL_NOT_SIZE) {
+    if (node->children[0]->symbol != "not")
+      malformed("BOOL with four children must start with not");
+    return genNot(node->children[BOOL_FIRST_OPERAND], trueLabel);
+  }
+  expectSize(node, BOOL_BINARY_SIZE);
+
+  const std::string &opName = node->children[0]->symbol;
+  if (opName == "and")
+    return genAnd(node, trueLabel, falseLabel);
+  if (opName == "or")
+    return genOr(node, trueLabel, falseLabel);
+  return genComparison(node, trueLabel);
+}
+
+std::string CodeGen::genComparison(Node *node, const std::string &trueLabel) {
+  const std::string opSymbol = comparisonOperator(node->children[0]->symbol);
+
+  std::string left = newVar();
+  std::string right = newVar();
+  std::string out = declare(left) + declare(right);
+  out += genTerm(node->children[BOOL_FIRST_OPERAND], left);
+  out += genTerm(node->children[BOOL_SECOND_OPERAND], right);
+  return out + "if (" + left + " " + opSymbol + " " + right + ") goto " +
+         trueLabel + ";" + NEWLINE;
+}
+
+std::string CodeGen::genNot(Node *inner, const std::string &trueLabel) {
+  std::string innerTrue = newLabel();
+  std::string innerFalse = newLabel();
+
+  std::string out = genBool(inner, innerTrue, innerFalse);
+  return out + labelLine(innerFalse) + gotoLine(trueLabel) +
+         labelLine(innerTrue);
+}
+
+std::string CodeGen::genAnd(Node *node, const std::string &trueLabel,
+                            const std::string &falseLabel) {
+  std::string secondStart = newLabel();
+  std::string firstFalse = newLabel();
+
+  std::string out = genBool(node->children[BOOL_FIRST_OPERAND], secondStart,
+                            firstFalse);
+  out += labelLine(firstFalse) + gotoLine(falseLabel) + labelLine(secondStart);
+  out += genBool(node->children[BOOL_SECOND_OPERAND], trueLabel, falseLabel);
+  return out;
+}
+
+std::string CodeGen::genOr(Node *node, const std::string &trueLabel,
+                           const std::string &falseLabel) {
+  Node *first = node->children[BOOL_FIRST_OPERAND];
+  Node *second = node->children[BOOL_SECOND_OPERAND];
+
+  if (!jumpsToFalseLabel(first)) {
+    std::string out = genBool(first, trueLabel, falseLabel);
+    out += genBool(second, trueLabel, falseLabel);
+    return out;
+  }
+
+  std::string secondStart = newLabel();
+  std::string out = genBool(first, trueLabel, secondStart);
+  out += labelLine(secondStart);
+  out += genBool(second, trueLabel, falseLabel);
+  return out;
+}
+
+// BRANCH -> if BOOL then { ALGO } else { ALGO }
+std::string CodeGen::genBranch(Node *node) {
+  expectNode(node, "BRANCH");
+  expectSize(node, BRANCH_SIZE);
+  for (const auto &fixed : BRANCH_FIXED) {
+    if (node->children[fixed.first]->symbol != fixed.second)
+      malformed(std::string("BRANCH expected '") + fixed.second + "'");
+  }
+
+  std::string thenLabel = newLabel();
+  std::string elseLabel = newLabel();
+  std::string endLabel = newLabel();
+
+  std::string decision =
+      genBool(node->children[BRANCH_BOOL], thenLabel, elseLabel);
+  std::string trueCode = genAlgo(node->children[BRANCH_THEN]);
+  std::string falseCode = genAlgo(node->children[BRANCH_ELSE]);
+
+  return std::string("/* if */") + NEWLINE + decision + elseLabel +
+         " : /* else */" + NEWLINE + falseCode + ";" + NEWLINE +
+         gotoLine(endLabel) + thenLabel + " : /* then */" + NEWLINE +
+         trueCode + ";" + NEWLINE + endLabel + " : /* continue */";
 }

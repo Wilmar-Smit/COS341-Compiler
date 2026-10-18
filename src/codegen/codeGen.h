@@ -24,6 +24,13 @@ private:
   std::string genAssign(Node *node);
   std::string genNegation(Node *node, const std::string &resultVar);
   std::string genBinary(Node *node, const std::string &resultVar);
+  std::string genComparison(Node *node, const std::string &trueLabel);
+  std::string genNot(Node *inner, const std::string &trueLabel);
+  std::string genAnd(Node *node, const std::string &trueLabel,
+                     const std::string &falseLabel);
+  std::string genOr(Node *node, const std::string &trueLabel,
+                    const std::string &falseLabel);
+  std::string genBranch(Node *node);
 
 public:
   explicit CodeGen(std::string numType);
@@ -36,6 +43,8 @@ public:
   std::string genAlgo(Node *node);
   std::string genInstr(Node *node);
   std::string genTerm(Node *node, const std::string &resultVar);
+  std::string genBool(Node *node, const std::string &trueLabel,
+                      const std::string &falseLabel);
 };
 
 #endif // CODE_GEN_H

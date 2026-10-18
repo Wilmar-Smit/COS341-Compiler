@@ -207,19 +207,15 @@ TEST_CASE("a CALL inside a TERM is deferred to phase 3b", "[codegen][term]") {
                       ContainsSubstring("Phase 3b"));
 }
 
-TEST_CASE("BRANCH, LOOP and CALL instructions are still deferred",
+TEST_CASE("LOOP and CALL instructions are still deferred",
           "[codegen]") {
   CodeGen gen("int");
 
-  CompiledProgram branch = compileSource(
-      "#x : : if eq ( #x 1 ) then { nop ; } else { nop ; } ;");
   CompiledProgram loop =
       compileSource("#x : : while eq ( #x 1 ) do { nop ; } ;");
   CompiledProgram call =
       compileSource(": void #p ( ) { : : nop ; return } : #p ( ) ;");
 
-  REQUIRE_THROWS_WITH(gen.genInstr(firstInstrOf(branch)),
-                      ContainsSubstring("step 3"));
   REQUIRE_THROWS_WITH(gen.genInstr(firstInstrOf(loop)),
                       ContainsSubstring("step 4"));
   REQUIRE_THROWS_WITH(gen.genInstr(firstInstrOf(call)),

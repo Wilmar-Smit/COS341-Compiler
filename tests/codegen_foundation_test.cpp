@@ -135,10 +135,6 @@ TEST_CASE("genAlgo and genInstr reject malformed nodes", "[codegen]") {
 
 TEST_CASE("constructs from later steps throw CodeGenUnsupported",
           "[codegen]") {
-  SECTION("BRANCH") {
-    requireUnsupported(
-        "#x : : if eq ( #x 1 ) then { nop ; } else { nop ; } ;");
-  }
   SECTION("LOOP") {
     requireUnsupported("#x : : while eq ( #x 1 ) do { nop ; } ;");
   }

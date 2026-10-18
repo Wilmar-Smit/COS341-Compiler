@@ -143,4 +143,19 @@ struct CompiledProgram {
 // test_helpers.cpp.
 CompiledProgram compileSource(const std::string &source);
 
+// First compiler found among $CXX, g++, clang++, c++; empty if none. Defined
+// in test_helpers.cpp.
+std::string findCxxCompiler();
+
+// Wraps a generated ALGO fragment in a main() that declares the program's
+// top-level variables (taken from its V_DECL) as `numType`, zero-initialised.
+std::string wrapInMain(const CompiledProgram &program,
+                       const std::string &numType,
+                       const std::string &fragment);
+
+// Compiles `source` in the current directory under a unique name, runs it and
+// returns its stdout. Temporary files are removed afterwards. Throws
+// std::runtime_error if the compile or the run fails.
+std::string compileAndRun(const std::string &source);
+
 #endif

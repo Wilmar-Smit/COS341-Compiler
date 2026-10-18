@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <sys/wait.h>
 
 #include "tokens/genericTokenHandler/generic.handler.h"
 #include "fileReader/parseTableReader.h"
@@ -112,6 +113,8 @@ std::string searchPath(const std::string &name) {
   return "";
 }
 
+constexpr int TIMEOUT_EXIT_STATUS = 124;
+
 // Removes every temporary the compile-and-run produces, even on a throw.
 struct TempFiles {
   std::vector<std::filesystem::path> paths;
@@ -176,7 +179,10 @@ std::string compileAndRun(const std::string &source) {
                              diagnostics.str() + "\n--- source ---\n" + source);
   }
 
-  FILE *pipe = popen(("\"" + bin.string() + "\"").c_str(), "r");
+  // a wrong loop translation must fail the test, not hang the run
+  std::string limit = searchPath("timeout");
+  if (!limit.empty()) limit = "\"" + limit + "\" 10 ";
+  FILE *pipe = popen((limit + "\"" + bin.string() + "\"").c_str(), "r");
   if (pipe == nullptr) throw std::runtime_error("could not run " + bin.string());
 
   std::string output;
@@ -184,7 +190,11 @@ std::string compileAndRun(const std::string &source) {
   while (std::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) !=
          nullptr)
     output += buffer.data();
-  if (pclose(pipe) != 0)
+  int status = pclose(pipe);
+  if (WIFEXITED(status) && WEXITSTATUS(status) == TIMEOUT_EXIT_STATUS)
+    throw std::runtime_error(
+        "generated program did not finish within 10 seconds (infinite loop?)");
+  if (status != 0)
     throw std::runtime_error("generated program exited abnormally");
   return output;
 }

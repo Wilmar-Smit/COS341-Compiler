@@ -31,6 +31,9 @@ private:
   std::string genOr(Node *node, const std::string &trueLabel,
                     const std::string &falseLabel);
   std::string genBranch(Node *node);
+  std::string genLoop(Node *node);
+  std::string genTestLoop(Node *boolNode, Node *algo, bool untilForm);
+  std::string genRepeatLoop(Node *boolNode, Node *algo, bool whileForm);
 
 public:
   explicit CodeGen(std::string numType);

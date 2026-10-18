@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <span>
 #include <utility>
 
 namespace {
@@ -37,13 +38,24 @@ const std::array<std::pair<std::size_t, const char *>, 7> BRANCH_FIXED = {{
     {0, "if"}, {2, "then"}, {3, "{"}, {5, "}"}, {6, "else"}, {7, "{"},
     {9, "}"}}};
 
+constexpr std::size_t LOOP_SIZE = 6;
+constexpr std::size_t LOOP_TEST_BOOL = 1;
+constexpr std::size_t LOOP_TEST_ALGO = 4;
+constexpr std::size_t LOOP_REPEAT_ALGO = 2;
+constexpr std::size_t LOOP_REPEAT_COND = 4;
+constexpr std::size_t LOOP_REPEAT_BOOL = 5;
+using FixedSymbol = std::pair<std::size_t, const char *>;
+const std::array<FixedSymbol, 3> LOOP_TEST_FIXED = {
+    {{2, "do"}, {3, "{"}, {5, "}"}}};
+const std::array<FixedSymbol, 3> LOOP_REPEAT_FIXED = {
+    {{0, "do"}, {1, "{"}, {3, "}"}}};
+
 constexpr std::size_t TERM_LEAF_SIZE = 1;
 constexpr std::size_t TERM_UNARY_SIZE = 4;
 constexpr std::size_t TERM_BINARY_SIZE = 5;
 constexpr std::size_t TERM_FIRST_OPERAND = 2;
 constexpr std::size_t TERM_SECOND_OPERAND = 3;
 
-const char *const PLANNED_LOOP = "step 4";
 const char *const PLANNED_CALL = "Phase 3b (function calls via inlining)";
 
 [[noreturn]] void malformed(const std::string &message) {
@@ -96,6 +108,23 @@ std::string binaryOperator(const std::string &opName) {
   if (opName == "mul")
     return "*";
   malformed("unknown operator '" + opName + "' in TERM");
+}
+
+void expectFixed(const Node *node, std::span<const FixedSymbol> fixed) {
+  for (const auto &entry : fixed) {
+    if (node->children[entry.first]->symbol != entry.second)
+      malformed(node->symbol + " expected '" + entry.second + "'");
+  }
+}
+
+// COND -> while | until
+const std::string &condKind(const Node *cond) {
+  expectNode(cond, "COND");
+  expectSize(cond, KEYWORD_ONLY_SIZE);
+  const std::string &kind = cond->children[0]->symbol;
+  if (kind != "while" && kind != "until")
+    malformed("COND expected while or until but found " + kind);
+  return kind;
 }
 
 std::string labelLine(const std::string &label) {
@@ -207,8 +236,10 @@ std::string CodeGen::genInstr(Node *node) {
     expectSize(node, KEYWORD_ONLY_SIZE);
     return genBranch(node->children[0]);
   }
-  if (kind == "LOOP")
-    unsupported("LOOP", PLANNED_LOOP);
+  if (kind == "LOOP") {
+    expectSize(node, KEYWORD_ONLY_SIZE);
+    return genLoop(node->children[0]);
+  }
   if (kind == "CALL")
     unsupported("CALL", PLANNED_CALL);
 
@@ -393,4 +424,53 @@ std::string CodeGen::genBranch(Node *node) {
          " : /* else */" + NEWLINE + falseCode + ";" + NEWLINE +
          gotoLine(endLabel) + thenLabel + " : /* then */" + NEWLINE +
          trueCode + ";" + NEWLINE + endLabel + " : /* continue */";
+}
+
+// LOOP -> COND BOOL do { ALGO } | do { ALGO } COND BOOL
+std::string CodeGen::genLoop(Node *node) {
+  expectNode(node, "LOOP");
+  expectSize(node, LOOP_SIZE);
+
+  if (node->children[0]->symbol == "COND") {
+    expectFixed(node, LOOP_TEST_FIXED);
+    bool untilForm = condKind(node->children[0]) == "until";
+    return genTestLoop(node->children[LOOP_TEST_BOOL],
+                       node->children[LOOP_TEST_ALGO], untilForm);
+  }
+
+  expectFixed(node, LOOP_REPEAT_FIXED);
+  bool whileForm = condKind(node->children[LOOP_REPEAT_COND]) == "while";
+  return genRepeatLoop(node->children[LOOP_REPEAT_BOOL],
+                       node->children[LOOP_REPEAT_ALGO], whileForm);
+}
+
+// The condition is tested before the body. while is until with the condition
+// negated, so both exit through the same label.
+std::string CodeGen::genTestLoop(Node *boolNode, Node *algo, bool untilForm) {
+  std::string startLabel = newLabel();
+  std::string exitLabel = newLabel();
+  std::string bodyLabel = newLabel();
+
+  std::string decision = untilForm ? genBool(boolNode, exitLabel, bodyLabel)
+                                   : genNot(boolNode, exitLabel);
+  std::string bodyCode = genAlgo(algo);
+
+  return startLabel + " : /* until */" + NEWLINE + decision + bodyLabel +
+         " : /* do */" + NEWLINE + bodyCode + ";" + NEWLINE +
+         gotoLine(startLabel) + labelLine(exitLabel) + "/* exit */";
+}
+
+// The body runs once before the condition is first tested. do-until is
+// do-while with the condition negated.
+std::string CodeGen::genRepeatLoop(Node *boolNode, Node *algo,
+                                   bool whileForm) {
+  std::string bodyLabel = newLabel();
+  std::string exitLabel = newLabel();
+
+  std::string decision = whileForm ? genBool(boolNode, bodyLabel, exitLabel)
+                                   : genNot(boolNode, bodyLabel);
+  std::string bodyCode = genAlgo(algo);
+
+  return bodyLabel + " : /* do */" + NEWLINE + bodyCode + ";" + NEWLINE +
+         "/* while */" + NEWLINE + decision + exitLabel + " : /* exit */";
 }

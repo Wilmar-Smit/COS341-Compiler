@@ -62,3 +62,27 @@ PipelineResult runPipeline(const std::string &source) {
 
   return result;
 }
+
+CompiledProgram compileSource(const std::string &source) {
+  CompiledProgram program;
+
+  std::vector<Token *> rawTokens = tokenizeAll(source);
+  rawTokens.push_back(new Token("$", TokenType::DOLLAR_EOF));
+  for (Token *token : rawTokens) program.tokens.emplace_back(token);
+
+  program.parser = std::make_unique<Parser>();
+  std::ostringstream capture;
+  std::streambuf *oldBuf = std::cout.rdbuf(capture.rdbuf());
+  bool accepted = program.parser->ParseTokens(rawTokens);
+  std::cout.rdbuf(oldBuf);
+  program.tree.reset(program.parser->getTree());
+  if (!accepted)
+    throw std::runtime_error("source was rejected by the parser: " +
+                             capture.str());
+
+  program.scopeTree = std::make_unique<ScopeTree>(*program.tree);
+  program.root = program.tree->getRoot();
+  program.typeChecker = std::make_unique<TypeChecker>(
+      program.root, program.scopeTree->getSymbolTable());
+  return program;
+}

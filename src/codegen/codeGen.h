@@ -19,6 +19,12 @@ private:
   int varCounter;
   int labelCounter;
 
+  std::string declare(const std::string &var) const;
+  std::string genOutp(Node *node);
+  std::string genAssign(Node *node);
+  std::string genNegation(Node *node, const std::string &resultVar);
+  std::string genBinary(Node *node, const std::string &resultVar);
+
 public:
   explicit CodeGen(std::string numType);
 
@@ -29,6 +35,7 @@ public:
 
   std::string genAlgo(Node *node);
   std::string genInstr(Node *node);
+  std::string genTerm(Node *node, const std::string &resultVar);
 };
 
 #endif // CODE_GEN_H

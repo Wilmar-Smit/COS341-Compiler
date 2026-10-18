@@ -135,8 +135,6 @@ TEST_CASE("genAlgo and genInstr reject malformed nodes", "[codegen]") {
 
 TEST_CASE("constructs from later steps throw CodeGenUnsupported",
           "[codegen]") {
-  SECTION("print ( TERM )") { requireUnsupported("#x : : print ( #x ) ;"); }
-  SECTION("ASSIGN") { requireUnsupported("#x : : #x = 1 ;"); }
   SECTION("BRANCH") {
     requireUnsupported(
         "#x : : if eq ( #x 1 ) then { nop ; } else { nop ; } ;");
@@ -151,7 +149,7 @@ TEST_CASE("constructs from later steps throw CodeGenUnsupported",
 
 TEST_CASE("genAlgo propagates CodeGenUnsupported from a later instruction",
           "[codegen]") {
-  CompiledProgram program = compileSource("#x : : nop ; #x = 1 ;");
+  CompiledProgram program = compileSource("#x : : nop ; while eq ( #x 1 ) do { nop ; } ;");
   CodeGen gen("int");
   REQUIRE_THROWS_AS(gen.genAlgo(algoOf(program)), CodeGenUnsupported);
 }

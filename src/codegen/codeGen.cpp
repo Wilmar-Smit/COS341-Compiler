@@ -16,11 +16,22 @@ constexpr std::size_t ALGO_REST = 2;
 constexpr std::size_t KEYWORD_ONLY_SIZE = 1;
 constexpr std::size_t KEYWORD_ARG_SIZE = 2;
 constexpr std::size_t OUTP_TERM_SIZE = 3;
+constexpr std::size_t OUTP_TERM = 1;
 
-constexpr int STEP_TERMS_AND_ASSIGN = 2;
-constexpr int STEP_BRANCH = 3;
-constexpr int STEP_LOOP = 4;
-constexpr int STEP_CALL = 5;
+constexpr std::size_t ASSIGN_SIZE = 3;
+constexpr std::size_t ASSIGN_NAME = 0;
+constexpr std::size_t ASSIGN_EQUALS = 1;
+constexpr std::size_t ASSIGN_TERM = 2;
+
+constexpr std::size_t TERM_LEAF_SIZE = 1;
+constexpr std::size_t TERM_UNARY_SIZE = 4;
+constexpr std::size_t TERM_BINARY_SIZE = 5;
+constexpr std::size_t TERM_FIRST_OPERAND = 2;
+constexpr std::size_t TERM_SECOND_OPERAND = 3;
+
+const char *const PLANNED_BRANCH = "step 3";
+const char *const PLANNED_LOOP = "step 4";
+const char *const PLANNED_CALL = "Phase 3b (function calls via inlining)";
 
 [[noreturn]] void malformed(const std::string &message) {
   throw std::logic_error("CodeGen: malformed syntax tree, " + message);
@@ -53,10 +64,25 @@ bool isNumLiteral(const Node *node) {
   return std::isdigit(static_cast<unsigned char>(first)) != 0 || first == '-';
 }
 
-[[noreturn]] void unsupported(const std::string &construct, int step) {
+[[noreturn]] void unsupported(const std::string &construct,
+                              const std::string &plannedFor) {
   throw CodeGenUnsupported("code generation for " + construct +
-                           " is not implemented yet (planned for step " +
-                           std::to_string(step) + ")");
+                           " is not implemented yet (planned for " +
+                           plannedFor + ")");
+}
+
+std::string binaryOperator(const std::string &opName) {
+  if (opName == "mod")
+    return "%";
+  if (opName == "div")
+    return "/";
+  if (opName == "add")
+    return "+";
+  if (opName == "sub")
+    return "-";
+  if (opName == "mul")
+    return "*";
+  malformed("unknown operator '" + opName + "' in TERM");
 }
 
 bool needsFloat(const Node *node) {
@@ -67,18 +93,6 @@ bool needsFloat(const Node *node) {
   }
   return std::any_of(node->children.begin(), node->children.end(),
                      [](const Node *child) { return needsFloat(child); });
-}
-
-// OUTP -> ( TERM ) | STRING
-std::string genOutp(const Node *node) {
-  expectNode(node, "OUTP");
-  if (node->children.size() == OUTP_TERM_SIZE)
-    unsupported("print ( TERM )", STEP_TERMS_AND_ASSIGN);
-
-  expectSize(node, KEYWORD_ONLY_SIZE);
-  if (!isStringLexeme(node->children[0]))
-    malformed("OUTP expected a STRING");
-  return "std::cout << " + node->children[0]->symbol;
 }
 
 } // namespace
@@ -141,14 +155,95 @@ std::string CodeGen::genInstr(Node *node) {
     expectSize(node, KEYWORD_ARG_SIZE);
     return genOutp(node->children[1]);
   }
-  if (kind == "ASSIGN")
-    unsupported("ASSIGN", STEP_TERMS_AND_ASSIGN);
+  if (kind == "ASSIGN") {
+    expectSize(node, KEYWORD_ONLY_SIZE);
+    return genAssign(node->children[0]);
+  }
   if (kind == "BRANCH")
-    unsupported("BRANCH", STEP_BRANCH);
+    unsupported("BRANCH", PLANNED_BRANCH);
   if (kind == "LOOP")
-    unsupported("LOOP", STEP_LOOP);
+    unsupported("LOOP", PLANNED_LOOP);
   if (kind == "CALL")
-    unsupported("CALL", STEP_CALL);
+    unsupported("CALL", PLANNED_CALL);
 
   malformed("unknown instruction '" + kind + "'");
+}
+
+std::string CodeGen::declare(const std::string &var) const {
+  return numType + " " + var + ";" + NEWLINE;
+}
+
+// OUTP -> ( TERM ) | STRING
+std::string CodeGen::genOutp(Node *node) {
+  expectNode(node, "OUTP");
+  if (node->children.size() == OUTP_TERM_SIZE) {
+    std::string var = newVar();
+    return declare(var) + genTerm(node->children[OUTP_TERM], var) +
+           "std::cout << " + var;
+  }
+
+  expectSize(node, KEYWORD_ONLY_SIZE);
+  if (!isStringLexeme(node->children[0]))
+    malformed("OUTP expected a STRING");
+  return "std::cout << " + node->children[0]->symbol;
+}
+
+// ASSIGN -> NAME = TERM
+std::string CodeGen::genAssign(Node *node) {
+  expectNode(node, "ASSIGN");
+  expectSize(node, ASSIGN_SIZE);
+  const Node *name = node->children[ASSIGN_NAME];
+  if (!name->children.empty() || name->symbol.empty())
+    malformed("ASSIGN expected a NAME on the left");
+  if (node->children[ASSIGN_EQUALS]->symbol != "=")
+    malformed("ASSIGN expected '='");
+
+  std::string var = newVar();
+  return declare(var) + genTerm(node->children[ASSIGN_TERM], var) +
+         name->symbol + " = " + var;
+}
+
+// TERM -> NAME | NUM | CALL | neg ( TERM ) | op ( TERM TERM )
+std::string CodeGen::genTerm(Node *node, const std::string &resultVar) {
+  expectNode(node, "TERM");
+
+  if (node->children.size() == TERM_LEAF_SIZE) {
+    const Node *leaf = node->children[0];
+    if (leaf->symbol == "CALL")
+      unsupported("a CALL inside a TERM", PLANNED_CALL);
+    if (!leaf->children.empty() || leaf->symbol.empty())
+      malformed("TERM expected a NAME or NUM leaf");
+    return resultVar + " = " + leaf->symbol + ";" + NEWLINE;
+  }
+  if (node->children.size() == TERM_UNARY_SIZE)
+    return genNegation(node, resultVar);
+  if (node->children.size() == TERM_BINARY_SIZE)
+    return genBinary(node, resultVar);
+
+  malformed("TERM has " + std::to_string(node->children.size()) +
+            " children");
+}
+
+std::string CodeGen::genNegation(Node *node, const std::string &resultVar) {
+  if (node->children[0]->symbol != "neg")
+    malformed("TERM with four children must start with neg");
+
+  std::string operand = newVar();
+  return declare(operand) +
+         genTerm(node->children[TERM_FIRST_OPERAND], operand) + resultVar +
+         " = -" + operand + ";" + NEWLINE;
+}
+
+std::string CodeGen::genBinary(Node *node, const std::string &resultVar) {
+  const std::string opSymbol = binaryOperator(node->children[0]->symbol);
+
+  std::string left = newVar();
+  std::string right = newVar();
+  // separate statements: operand order of + is unspecified, and the
+  // temporary numbering depends on the left operand being generated first
+  std::string out = declare(left) + declare(right);
+  out += genTerm(node->children[TERM_FIRST_OPERAND], left);
+  out += genTerm(node->children[TERM_SECOND_OPERAND], right);
+  return out + resultVar + " = " + left + " " + opSymbol + " " + right + ";" +
+         NEWLINE;
 }

@@ -136,7 +136,7 @@ TEST_CASE("compiled BOOL matches C++ logic for every assignment",
   double parseSeconds = secondsSince(start);
 
   start = std::chrono::steady_clock::now();
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   std::string fragment =
       gen.genAlgo(program.root->children[0]->children[4]);
   double genSeconds = secondsSince(start);

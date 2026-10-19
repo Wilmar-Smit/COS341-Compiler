@@ -2,9 +2,11 @@
 #define CODE_GEN_H
 
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <string>
 
+#include "../symbolTable/symbolTable.h"
 #include "../xml/TreeBuilder.h"
 
 class CodeGenUnsupported : public std::runtime_error {
@@ -12,7 +14,7 @@ public:
   explicit CodeGenUnsupported(const std::string &message);
 };
 
-std::string determineNumType(Node *root);
+std::string numTypeFromMode(NumberMode mode);
 
 class CodeGen {
 private:
@@ -26,6 +28,7 @@ private:
   int labelCounter;
   std::map<std::string, FunctionEntry> functions;
   std::string hoistedDecls;
+  std::set<std::string> activeFunctions;
 
   std::string declare(const std::string &var) const;
   std::string genOutp(Node *node);
@@ -41,6 +44,12 @@ private:
   std::string genBranch(Node *node);
   void registerFunctions(Node *node);
   FunctionEntry &lookupFunction(const std::string &name);
+  const std::string &returnVarOf(FunctionEntry &entry);
+  FunctionEntry &calleeOf(Node *call);
+  std::string genBody(FunctionEntry &entry);
+  std::string genInline(Node *call, FunctionEntry &callee);
+  std::string genCallInstr(Node *call);
+  std::string genCallTerm(Node *call, const std::string &resultVar);
   std::string genP(Node *node);
   std::string genFDecl(Node *node);
   std::string genFunction(Node *node);

@@ -62,7 +62,7 @@ TEST_CASE("genProgram writes one blank space for an empty V_DECL",
 TEST_CASE("genProgram uses the numeric type for declarations",
           "[codegen][program]") {
   CompiledProgram program = compileSource("#x : : #x = 1.5 ;");
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   REQUIRE_THAT(gen.genProgram(program.root),
                ContainsSubstring("{\nfloat " + declaredName(program, 0) +
                                  ";\n \n"));
@@ -77,7 +77,7 @@ TEST_CASE("return 0 closes the program on its own line", "[codegen][program]") {
   REQUIRE(text.back() != '\n');
 }
 
-TEST_CASE("a function without a call generates but a CALL is deferred",
+TEST_CASE("a function without a call generates and a CALL is inlined",
           "[codegen][program]") {
   CodeGen gen("int");
 
@@ -88,7 +88,8 @@ TEST_CASE("a function without a call generates but a CALL is deferred",
 
   CompiledProgram withCall = compileSource(
       ": void #p ( ) { : : nop ; return } : #p ( ) ;");
-  REQUIRE_THROWS_AS(gen.genProgram(withCall.root), CodeGenUnsupported);
+  REQUIRE_THAT(gen.genProgram(withCall.root),
+               ContainsSubstring("begin of code-mine for void-procedure"));
 }
 
 TEST_CASE("malformed program trees throw std::logic_error",
@@ -128,7 +129,7 @@ std::string runProgram(const std::string &source) {
     SKIP("no C++ compiler (CXX, g++, clang++ or c++) available");
 
   CompiledProgram program = compileSource(source);
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   return compileAndRun(gen.genProgram(program.root));
 }
 

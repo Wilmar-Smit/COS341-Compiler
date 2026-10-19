@@ -137,6 +137,8 @@ struct CompiledProgram {
   std::unique_ptr<ScopeTree> scopeTree;
   std::unique_ptr<TypeChecker> typeChecker;
   Node *root = nullptr;
+  // the whole-program number kind the Type Analyser recorded in Phase 2b
+  NumberMode numberMode = NumberMode::FLOAT;
 };
 
 // Throws std::runtime_error if any stage rejects `source`. Defined in

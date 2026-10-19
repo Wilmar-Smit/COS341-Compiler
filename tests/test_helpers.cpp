@@ -90,6 +90,7 @@ CompiledProgram compileSource(const std::string &source) {
   program.root = program.tree->getRoot();
   program.typeChecker = std::make_unique<TypeChecker>(
       program.root, program.scopeTree->getSymbolTable());
+  program.numberMode = program.scopeTree->getSymbolTable().getNumberMode();
   return program;
 }
 

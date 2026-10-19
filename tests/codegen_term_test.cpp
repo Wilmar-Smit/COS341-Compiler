@@ -89,15 +89,15 @@ TEST_CASE("each binary operator maps to its C operator", "[codegen][term]") {
     std::string type;
   };
   const std::array<Case, 5> cases = {{{"mod", "%", "int"},   {"div", "/", "float"},
-                        {"add", "+", "int"},   {"sub", "-", "int"},
-                        {"mul", "*", "int"}}};
+                        {"add", "+", "float"}, {"sub", "-", "float"},
+                        {"mul", "*", "float"}}};
 
   for (const Case &c : cases) {
     INFO("operator " << c.spl);
     CompiledProgram program =
         compileSource("#x #y : : #x = " + c.spl + " ( #y 3 ) ;");
     Names n = namesOf(program);
-    CodeGen gen(determineNumType(program.root));
+    CodeGen gen(numTypeFromMode(program.numberMode));
     REQUIRE(gen.genInstr(firstInstrOf(program)) ==
             c.type + " v1;\n" + c.type + " v2;\n" + c.type + " v3;\nv2 = " +
                 n.y + ";\nv3 = 3;\nv1 = v2 " + c.c + " v3;\n" + n.x + " = v1");
@@ -174,8 +174,8 @@ TEST_CASE("a float program declares float temporaries", "[codegen][term]") {
   CompiledProgram withDecimal = compileSource("#x #y : : #x = 2.5 ;");
   CompiledProgram withDiv = compileSource("#x #y : : #x = div ( 1 2 ) ;");
   Names n = namesOf(withDecimal);
-  CodeGen decimalGen(determineNumType(withDecimal.root));
-  CodeGen divGen(determineNumType(withDiv.root));
+  CodeGen decimalGen(numTypeFromMode(withDecimal.numberMode));
+  CodeGen divGen(numTypeFromMode(withDiv.numberMode));
 
   REQUIRE(decimalGen.genInstr(firstInstrOf(withDecimal)) ==
           "float v1;\nv1 = 2.5;\n" + n.x + " = v1");
@@ -195,19 +195,20 @@ TEST_CASE("genAlgo continues temporary numbering across instructions",
           "int v4;\nv4 = " + n.x + ";\nstd::cout << v4;\n/* end */");
 }
 
-TEST_CASE("a CALL inside a TERM is deferred to phase 3b", "[codegen][term]") {
+TEST_CASE("a CALL inside a TERM needs a registered function",
+          "[codegen][term]") {
   const std::string fn = "num #f ( ) { : : return ( 1 ) } : ";
   CompiledProgram direct = compileSource("#x : " + fn + "#x = #f ( ) ;");
   CompiledProgram nested =
       compileSource("#x : " + fn + "#x = add ( #f ( ) 1 ) ;");
   CodeGen gen("int");
 
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(direct)), CodeGenUnsupported);
+  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(direct)), std::logic_error);
   REQUIRE_THROWS_WITH(gen.genInstr(firstInstrOf(nested)),
-                      ContainsSubstring("Phase 3b"));
+                      ContainsSubstring("unknown function"));
 }
 
-TEST_CASE("CALL instructions are still deferred",
+TEST_CASE("CALL instructions need a registered function",
           "[codegen]") {
   CodeGen gen("int");
 
@@ -215,7 +216,7 @@ TEST_CASE("CALL instructions are still deferred",
       compileSource(": void #p ( ) { : : nop ; return } : #p ( ) ;");
 
   REQUIRE_THROWS_WITH(gen.genInstr(firstInstrOf(call)),
-                      ContainsSubstring("Phase 3b"));
+                      ContainsSubstring("unknown function"));
 }
 
 TEST_CASE("genTerm rejects malformed nodes", "[codegen][term]") {

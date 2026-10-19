@@ -243,7 +243,7 @@ TEST_CASE("malformed LOOP nodes throw std::logic_error", "[codegen][loop]") {
   REQUIRE_THROWS_AS(gen.genInstr(nullptr), std::logic_error);
 }
 
-TEST_CASE("a CALL inside a loop condition or body is deferred",
+TEST_CASE("a CALL inside a loop condition or body is inlined",
           "[codegen][loop]") {
   const std::string fn = "num #f ( ) { : : return ( 1 ) } : ";
   const std::string proc = "void #p ( ) { : : nop ; return } : ";
@@ -254,9 +254,13 @@ TEST_CASE("a CALL inside a loop condition or body is deferred",
   CompiledProgram inBody = compileSource(
       "#x : " + proc + "do { #p ( ) ; } until eq ( #x 1 ) ;");
 
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inCondition)),
-                    CodeGenUnsupported);
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inBody)), CodeGenUnsupported);
+  CodeGen condGen("int");
+  CodeGen bodyGen("int");
+  REQUIRE(condGen.genProgram(inCondition.root).find("/* until */") !=
+          std::string::npos);
+  REQUIRE(bodyGen.genProgram(inBody.root).find("/* do */") !=
+          std::string::npos);
+  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inBody)), std::logic_error);
 }
 
 namespace {
@@ -266,7 +270,7 @@ std::string runSpl(const std::string &source) {
     SKIP("no C++ compiler (CXX, g++, clang++ or c++) available");
 
   CompiledProgram program = compileSource(source);
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   std::string fragment = gen.genAlgo(algoOf(program));
   return compileAndRun(wrapInMain(program, gen.getNumType(), fragment));
 }

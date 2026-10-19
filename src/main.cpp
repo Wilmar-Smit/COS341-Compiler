@@ -24,9 +24,10 @@ enum class CodeGenResult { Generated, Skipped, Failed };
 
 // Skipping on CodeGenUnsupported is temporary: until Phase 3b, valid programs
 // with functions must keep compiling with exit code 0.
-CodeGenResult runCodeGeneration(Node *root, const std::string &outputName) {
+CodeGenResult runCodeGeneration(Node *root, const std::string &numType,
+                                const std::string &outputName) {
   try {
-    CodeGen codeGen(determineNumType(root));
+    CodeGen codeGen(numType);
     std::string generated = codeGen.genProgram(root);
 
     std::ofstream outputFile(outputName);
@@ -160,7 +161,9 @@ int main(int argc, char* argv[]) {
 
   // ------------ STAGE 5: CODE GENERATION ------------
   std::string outputName = argc > 2 ? argv[2] : "output.cpp";
-  if (runCodeGeneration(tree->getRoot(), outputName) ==
+  std::string numType =
+      numTypeFromMode(scopeTree->getSymbolTable().getNumberMode());
+  if (runCodeGeneration(tree->getRoot(), numType, outputName) ==
       CodeGenResult::Failed) {
     delete typeChecker;
     delete scopeTree;

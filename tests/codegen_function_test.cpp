@@ -235,7 +235,7 @@ TEST_CASE("float programs declare hoisted variables as float",
                                  functionName(h) + "v1;\n"));
 }
 
-TEST_CASE("a CALL in main or in a function body is still deferred",
+TEST_CASE("a CALL in main or in a function body is inlined",
           "[codegen][function]") {
   CompiledProgram inMain = compileSource(
       "#x : num #f ( ) { : : return ( 1 ) } : #x = #f ( ) ;");
@@ -243,8 +243,8 @@ TEST_CASE("a CALL in main or in a function body is still deferred",
       "#x : num #p ( ) { #r : num #g ( ) { : : return ( 1 ) } : "
       "#r = #g ( ) ; return ( #r ) } : nop ;");
 
-  REQUIRE_THROWS_AS(generate(inMain), CodeGenUnsupported);
-  REQUIRE_THROWS_AS(generate(inBody), CodeGenUnsupported);
+  REQUIRE_THAT(generate(inMain), ContainsSubstring("begin of code-mine"));
+  REQUIRE_THAT(generate(inBody), ContainsSubstring("begin of code-mine"));
 }
 
 TEST_CASE("malformed function nodes throw std::logic_error",
@@ -299,7 +299,7 @@ std::string runProgram(const std::string &source) {
     SKIP("no C++ compiler (CXX, g++, clang++ or c++) available");
 
   CompiledProgram program = compileSource(source);
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   return compileAndRun(gen.genProgram(program.root));
 }
 

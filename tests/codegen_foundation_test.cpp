@@ -1,4 +1,4 @@
-// Step 1 of phase 3a: counters, numeric type selection and the ALGO
+// Step 1 of phase 3a: counters, numeric type mapping and the ALGO
 // instructions that need no term/boolean support yet. Programs go through
 // the same lex -> parse -> ScopeTree -> TypeChecker run as main.cpp.
 //
@@ -26,13 +26,13 @@ Node *firstInstrOf(const CompiledProgram &program) {
 
 std::string numTypeOf(const std::string &source) {
   CompiledProgram program = compileSource(source);
-  return determineNumType(program.root);
+  return numTypeFromMode(program.numberMode);
 }
 
-void requireUnsupported(const std::string &source) {
+void requireUnresolved(const std::string &source) {
   CompiledProgram program = compileSource(source);
   CodeGen gen("int");
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(program)), CodeGenUnsupported);
+  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(program)), std::logic_error);
 }
 
 } // namespace
@@ -61,36 +61,42 @@ TEST_CASE("CodeGen remembers its numeric type", "[codegen]") {
   REQUIRE(CodeGen("int").getNumType() == "int");
 }
 
-TEST_CASE("determineNumType picks int for a plain program", "[codegen]") {
-  REQUIRE(numTypeOf(": : nop ;") == "int");
+TEST_CASE("numTypeFromMode maps both Phase 2b modes", "[codegen]") {
+  REQUIRE(numTypeFromMode(NumberMode::INTEGER) == "int");
+  REQUIRE(numTypeFromMode(NumberMode::FLOAT) == "float");
 }
 
-TEST_CASE("determineNumType picks float when div is used", "[codegen]") {
+TEST_CASE("a program without mod is a float program", "[codegen]") {
+  REQUIRE(numTypeOf(": : nop ;") == "float");
+  REQUIRE(numTypeOf("#x : : #x = add ( 1 2 ) ;") == "float");
+}
+
+TEST_CASE("a program with div is a float program", "[codegen]") {
   REQUIRE(numTypeOf("#x : : #x = div ( 7 2 ) ;") == "float");
 }
 
-TEST_CASE("determineNumType picks float for a decimal literal", "[codegen]") {
+TEST_CASE("a program with a decimal literal is a float program", "[codegen]") {
   REQUIRE(numTypeOf("#x : : #x = 1.5 ;") == "float");
   REQUIRE(numTypeOf("#x : : #x = -0.25 ;") == "float");
 }
 
-TEST_CASE("determineNumType picks int when only mod is used", "[codegen]") {
+TEST_CASE("a program with mod is an integer program", "[codegen]") {
   REQUIRE(numTypeOf("#x : : #x = mod ( 7 2 ) ;") == "int");
 }
 
-TEST_CASE("determineNumType looks inside function bodies", "[codegen]") {
+TEST_CASE("the number mode looks inside function bodies", "[codegen]") {
   REQUIRE(numTypeOf("#x : num #f ( ) { : : return ( 2.5 ) } : #x = #f ( ) ;") ==
           "float");
   REQUIRE(numTypeOf("#x : num #f ( #a #b ) { : : return ( div ( #a #b ) ) } : "
                     "#x = #f ( 4 2 ) ;") == "float");
+  REQUIRE(numTypeOf("#x : num #f ( #a #b ) { : : return ( mod ( #a #b ) ) } : "
+                    "#x = #f ( 4 2 ) ;") == "int");
 }
 
-TEST_CASE("determineNumType ignores dots inside strings", "[codegen]") {
-  REQUIRE(numTypeOf(": : print \"a.b\" ;") == "int");
-}
-
-TEST_CASE("determineNumType rejects a null tree", "[codegen]") {
-  REQUIRE_THROWS_AS(determineNumType(nullptr), std::logic_error);
+TEST_CASE("a dot inside a string does not change the number mode",
+          "[codegen]") {
+  REQUIRE(numTypeOf(": : print \"a.b\" ;") == "float");
+  REQUIRE(numTypeOf("#x : : #x = mod ( 7 2 ) ; print \"a.b\" ;") == "int");
 }
 
 TEST_CASE("genAlgo turns an empty ALGO into the end marker", "[codegen]") {
@@ -133,16 +139,16 @@ TEST_CASE("genAlgo and genInstr reject malformed nodes", "[codegen]") {
   REQUIRE_THROWS_AS(gen.genInstr(algoOf(program)), std::logic_error);
 }
 
-TEST_CASE("constructs from later steps throw CodeGenUnsupported",
+TEST_CASE("a CALL outside genProgram has no registered function",
           "[codegen]") {
   SECTION("CALL") {
-    requireUnsupported(": void #p ( ) { : : nop ; return } : #p ( ) ;");
+    requireUnresolved(": void #p ( ) { : : nop ; return } : #p ( ) ;");
   }
 }
 
-TEST_CASE("genAlgo propagates CodeGenUnsupported from a later instruction",
+TEST_CASE("genAlgo propagates the error from a later instruction",
           "[codegen]") {
   CompiledProgram program = compileSource(": void #p ( ) { : : nop ; return } : nop ; #p ( ) ;");
   CodeGen gen("int");
-  REQUIRE_THROWS_AS(gen.genAlgo(algoOf(program)), CodeGenUnsupported);
+  REQUIRE_THROWS_AS(gen.genAlgo(algoOf(program)), std::logic_error);
 }

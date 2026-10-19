@@ -225,7 +225,7 @@ TEST_CASE("malformed BOOL and BRANCH nodes throw std::logic_error",
   REQUIRE_THROWS_AS(gen.genInstr(&instr), std::logic_error);
 }
 
-TEST_CASE("a CALL inside a BOOL or a BRANCH body is deferred",
+TEST_CASE("a CALL inside a BOOL or a BRANCH body is inlined",
           "[codegen][bool]") {
   const std::string fn = "num #f ( ) { : : return ( 1 ) } : ";
   const std::string proc = "void #p ( ) { : : nop ; return } : ";
@@ -238,9 +238,11 @@ TEST_CASE("a CALL inside a BOOL or a BRANCH body is deferred",
   CompiledProgram inElse = compileSource(
       "#x : " + proc + "if eq ( #x 1 ) then { } else { #p ( ) ; } ;");
 
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inBool)), CodeGenUnsupported);
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inBody)), CodeGenUnsupported);
-  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inElse)), CodeGenUnsupported);
+  for (CompiledProgram *program : {&inBool, &inBody, &inElse}) {
+    CodeGen fresh("int");
+    REQUIRE_THAT(fresh.genProgram(program->root), ContainsSubstring("/* if */"));
+  }
+  REQUIRE_THROWS_AS(gen.genInstr(firstInstrOf(inBody)), std::logic_error);
 }
 
 namespace {
@@ -256,7 +258,7 @@ std::string runSpl(const std::string &source) {
     SKIP("no C++ compiler (CXX, g++, clang++ or c++) available");
 
   CompiledProgram program = compileSource(source);
-  CodeGen gen(determineNumType(program.root));
+  CodeGen gen(numTypeFromMode(program.numberMode));
   std::string fragment = gen.genAlgo(algoOf(program));
   return compileAndRun(wrapInMain(program, gen.getNumType(), fragment));
 }

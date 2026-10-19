@@ -1,8 +1,6 @@
 #include "codeGen.h"
 
-#include <algorithm>
 #include <array>
-#include <cctype>
 #include <span>
 #include <utility>
 #include <vector>
@@ -82,7 +80,11 @@ constexpr std::size_t TERM_BINARY_SIZE = 5;
 constexpr std::size_t TERM_FIRST_OPERAND = 2;
 constexpr std::size_t TERM_SECOND_OPERAND = 3;
 
-const char *const PLANNED_CALL = "Phase 3b (function calls via inlining)";
+constexpr std::size_t CALL_SIZE = 4;
+constexpr std::size_t CALL_NAME = 0;
+constexpr std::size_t CALL_OPEN = 1;
+constexpr std::size_t CALL_INPUT = 2;
+constexpr std::size_t CALL_CLOSE = 3;
 
 [[noreturn]] void malformed(const std::string &message) {
   throw std::logic_error("CodeGen: malformed syntax tree, " + message);
@@ -105,21 +107,6 @@ void expectSize(const Node *node, std::size_t size) {
 bool isStringLexeme(const Node *node) {
   return node != nullptr && node->children.empty() &&
          !node->symbol.empty() && node->symbol.front() == '"';
-}
-
-// names are renamed to sysN in phase 2a, so only NUM leaves start this way
-bool isNumLiteral(const Node *node) {
-  if (node->symbol.empty())
-    return false;
-  char first = node->symbol.front();
-  return std::isdigit(static_cast<unsigned char>(first)) != 0 || first == '-';
-}
-
-[[noreturn]] void unsupported(const std::string &construct,
-                              const std::string &plannedFor) {
-  throw CodeGenUnsupported("code generation for " + construct +
-                           " is not implemented yet (planned for " +
-                           plannedFor + ")");
 }
 
 std::string binaryOperator(const std::string &opName) {
@@ -209,6 +196,59 @@ std::vector<std::string> declaredNames(const Node *node) {
   }
 }
 
+// INPUT -> EPSILON | TERM INPUT, as a list of argument terms
+std::vector<Node *> inputTerms(Node *input) {
+  std::vector<Node *> terms;
+  while (true) {
+    expectNode(input, "INPUT");
+    if (input->children.empty())
+      return terms;
+
+    expectSize(input, DECL_SIZE);
+    terms.push_back(input->children[0]);
+    input = input->children[1];
+  }
+}
+
+// a num function used as an instruction ends in the line of its return term
+std::string withoutLastTerminator(std::string code) {
+  const std::string terminator = std::string(";") + NEWLINE;
+  if (code.size() < terminator.size() ||
+      code.compare(code.size() - terminator.size(), terminator.size(),
+                   terminator) != 0)
+    malformed("an inlined num function does not end in a complete line");
+  code.erase(code.size() - terminator.size());
+  return code;
+}
+
+bool isNumFunction(const Node *fType) {
+  return fType->children[0]->symbol == "num";
+}
+
+// Inlining has no recursion, so a function that is already being generated
+// can only be reached through a call cycle. Leaving the scope, normally or
+// by exception, removes the name again.
+class ActiveFunction {
+public:
+  ActiveFunction(std::set<std::string> &active, const std::string &name)
+      : active(active), name(name) {
+    if (active.contains(name))
+      throw CodeGenUnsupported("function " + name +
+                               " calls itself, directly or indirectly, and "
+                               "recursion cannot be inlined");
+    active.insert(name);
+  }
+  ~ActiveFunction() { active.erase(name); }
+  ActiveFunction(const ActiveFunction &) = delete;
+  ActiveFunction &operator=(const ActiveFunction &) = delete;
+  ActiveFunction(ActiveFunction &&) = delete;
+  ActiveFunction &operator=(ActiveFunction &&) = delete;
+
+private:
+  std::set<std::string> &active;
+  std::string name;
+};
+
 std::string labelLine(const std::string &label) {
   return label + " :" + NEWLINE;
 }
@@ -240,25 +280,15 @@ bool jumpsToFalseLabel(const Node *node) {
           jumpsToFalseLabel(node->children[BOOL_SECOND_OPERAND]));
 }
 
-bool needsFloat(const Node *node) {
-  if (node->children.empty()) {
-    if (node->symbol == "div")
-      return true;
-    return isNumLiteral(node) && node->symbol.find('.') != std::string::npos;
-  }
-  return std::any_of(node->children.begin(), node->children.end(),
-                     [](const Node *child) { return needsFloat(child); });
-}
-
 } // namespace
 
 CodeGenUnsupported::CodeGenUnsupported(const std::string &message)
     : std::runtime_error(message) {}
 
-std::string determineNumType(Node *root) {
-  if (root == nullptr)
-    malformed("cannot determine the numeric type of a null tree");
-  return needsFloat(root) ? "float" : "int";
+// Phase 2b decides this for the whole program: mod forces INTEGER, anything
+// else is FLOAT
+std::string numTypeFromMode(NumberMode mode) {
+  return mode == NumberMode::INTEGER ? "int" : "float";
 }
 
 CodeGen::CodeGen(std::string numType)
@@ -322,8 +352,10 @@ std::string CodeGen::genInstr(Node *node) {
     expectSize(node, KEYWORD_ONLY_SIZE);
     return genLoop(node->children[0]);
   }
-  if (kind == "CALL")
-    unsupported("CALL", PLANNED_CALL);
+  if (kind == "CALL") {
+    expectSize(node, KEYWORD_ONLY_SIZE);
+    return genCallInstr(node->children[0]);
+  }
 
   malformed("unknown instruction '" + kind + "'");
 }
@@ -369,7 +401,7 @@ std::string CodeGen::genTerm(Node *node, const std::string &resultVar) {
   if (node->children.size() == TERM_LEAF_SIZE) {
     const Node *leaf = node->children[0];
     if (leaf->symbol == "CALL")
-      unsupported("a CALL inside a TERM", PLANNED_CALL);
+      return genCallTerm(node->children[0], resultVar);
     if (!leaf->children.empty() || leaf->symbol.empty())
       malformed("TERM expected a NAME or NUM leaf");
     return resultVar + " = " + leaf->symbol + ";" + NEWLINE;
@@ -566,6 +598,7 @@ std::string CodeGen::genProgram(Node *root) {
 
   functions.clear();
   hoistedDecls.clear();
+  activeFunctions.clear();
   registerFunctions(root->children[PROG_P]);
 
   return genP(root->children[PROG_P]) + NEWLINE +
@@ -646,7 +679,7 @@ std::string CodeGen::genFunction(Node *node) {
 
   FunctionEntry &entry = lookupFunction(name);
   if (isNum)
-    entry.returnVar = name + newVar();
+    returnVarOf(entry);
 
   for (const std::string &param : declaredNames(node->children[FTYPE_PARAMS]))
     hoistedDecls += declare(param);
@@ -664,17 +697,88 @@ std::string CodeGen::genFunction(Node *node) {
   out += std::string("Body of the procedure:") + NEWLINE;
   out += genVDecl(body->children[P_VDECL]);
   out += NEWLINE;
-  out += genAlgo(body->children[P_ALGO]);
-  if (isNum) {
-    out += std::string(";") + NEWLINE;
-    out += genTerm(node->children[FTYPE_RETURN_TERM], entry.returnVar);
-  }
+  out += genBody(entry);
   out += NEWLINE;
   out += "end of code-mine for " + label + NEWLINE;
   if (isNum)
     out += "The result is found in the return value " + entry.returnVar +
            NEWLINE;
   return out;
+}
+
+// the result variable is allocated when it is first needed, by the mine of the
+// function or by a call to it, whichever comes first
+const std::string &CodeGen::returnVarOf(FunctionEntry &entry) {
+  if (entry.returnVar.empty())
+    entry.returnVar = entry.node->children[FTYPE_NAME]->symbol + newVar();
+  return entry.returnVar;
+}
+
+// the code of a function body, shared by its mine and by every inlining
+std::string CodeGen::genBody(FunctionEntry &entry) {
+  const Node *fType = entry.node;
+  ActiveFunction active(activeFunctions, fType->children[FTYPE_NAME]->symbol);
+
+  std::string out = genAlgo(fType->children[FTYPE_BODY]->children[P_ALGO]);
+  if (isNumFunction(fType)) {
+    out += std::string(";") + NEWLINE;
+    out += genTerm(fType->children[FTYPE_RETURN_TERM], returnVarOf(entry));
+  }
+  return out;
+}
+
+// CALL -> NAME ( INPUT )
+CodeGen::FunctionEntry &CodeGen::calleeOf(Node *call) {
+  expectNode(call, "CALL");
+  expectSize(call, CALL_SIZE);
+  if (call->children[CALL_OPEN]->symbol != "(" ||
+      call->children[CALL_CLOSE]->symbol != ")")
+    malformed("CALL expected '(' and ')'");
+
+  const Node *name = call->children[CALL_NAME];
+  if (!name->children.empty() || name->symbol.empty())
+    malformed("CALL expected a NAME");
+  return lookupFunction(name->symbol);
+}
+
+// Every argument is captured in a fresh variable first, so an argument that
+// itself calls a function cannot disturb the parameters assigned afterwards.
+// Parameters, locals and the result variable are declared once in main.
+std::string CodeGen::genInline(Node *call, FunctionEntry &callee) {
+  std::vector<Node *> arguments = inputTerms(call->children[CALL_INPUT]);
+  std::vector<std::string> parameters =
+      declaredNames(callee.node->children[FTYPE_PARAMS]);
+  if (arguments.size() != parameters.size())
+    malformed("call of " + callee.node->children[FTYPE_NAME]->symbol +
+              " passes " + std::to_string(arguments.size()) +
+              " arguments, expected " + std::to_string(parameters.size()));
+
+  std::vector<std::string> captured;
+  std::string out;
+  for (std::size_t i = 0; i < arguments.size(); i++) {
+    captured.push_back(newVar());
+    out += declare(captured.back());
+  }
+  for (std::size_t i = 0; i < arguments.size(); i++)
+    out += genTerm(arguments[i], captured[i]);
+  for (std::size_t i = 0; i < arguments.size(); i++)
+    out += parameters[i] + " = " + captured[i] + ";" + NEWLINE;
+  return out + genBody(callee);
+}
+
+std::string CodeGen::genCallInstr(Node *call) {
+  FunctionEntry &callee = calleeOf(call);
+  std::string code = genInline(call, callee);
+  return isNumFunction(callee.node) ? withoutLastTerminator(code) : code;
+}
+
+std::string CodeGen::genCallTerm(Node *call, const std::string &resultVar) {
+  FunctionEntry &callee = calleeOf(call);
+  if (!isNumFunction(callee.node))
+    malformed("void procedure " + callee.node->children[FTYPE_NAME]->symbol +
+              " used as a TERM");
+  return genInline(call, callee) + resultVar + " = " + returnVarOf(callee) +
+         ";" + NEWLINE;
 }
 
 // V_DECL -> EPSILON | NAME V_DECL

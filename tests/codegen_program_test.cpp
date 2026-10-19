@@ -77,13 +77,14 @@ TEST_CASE("return 0 closes the program on its own line", "[codegen][program]") {
   REQUIRE(text.back() != '\n');
 }
 
-TEST_CASE("a non-empty F_DECL is deferred to phase 3b", "[codegen][program]") {
+TEST_CASE("a function without a call generates but a CALL is deferred",
+          "[codegen][program]") {
   CodeGen gen("int");
 
   CompiledProgram withFunction =
       compileSource("#x : num #f ( ) { : : return ( 1 ) } : nop ;");
-  REQUIRE_THROWS_WITH(gen.genProgram(withFunction.root),
-                      ContainsSubstring("Phase 3b"));
+  REQUIRE_THAT(gen.genProgram(withFunction.root),
+               ContainsSubstring("begin of code-mine for Function"));
 
   CompiledProgram withCall = compileSource(
       ": void #p ( ) { : : nop ; return } : #p ( ) ;");

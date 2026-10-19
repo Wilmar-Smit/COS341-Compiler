@@ -1,6 +1,7 @@
 #ifndef CODE_GEN_H
 #define CODE_GEN_H
 
+#include <map>
 #include <stdexcept>
 #include <string>
 
@@ -15,9 +16,16 @@ std::string determineNumType(Node *root);
 
 class CodeGen {
 private:
+  struct FunctionEntry {
+    Node *node;
+    std::string returnVar;
+  };
+
   std::string numType;
   int varCounter;
   int labelCounter;
+  std::map<std::string, FunctionEntry> functions;
+  std::string hoistedDecls;
 
   std::string declare(const std::string &var) const;
   std::string genOutp(Node *node);
@@ -31,7 +39,11 @@ private:
   std::string genOr(Node *node, const std::string &trueLabel,
                     const std::string &falseLabel);
   std::string genBranch(Node *node);
+  void registerFunctions(Node *node);
+  FunctionEntry &lookupFunction(const std::string &name);
   std::string genP(Node *node);
+  std::string genFDecl(Node *node);
+  std::string genFunction(Node *node);
   std::string genVDecl(Node *node) const;
   std::string genLoop(Node *node);
   std::string genTestLoop(Node *boolNode, Node *algo, bool untilForm);

@@ -5,6 +5,7 @@
 #include <cctype>
 #include <span>
 #include <utility>
+#include <vector>
 
 namespace {
 
@@ -51,13 +52,25 @@ constexpr std::size_t P_ALGO = 4;
 
 constexpr std::size_t DECL_SIZE = 2;
 
+constexpr std::size_t FTYPE_VOID_SIZE = 9;
+constexpr std::size_t FTYPE_NUM_SIZE = 12;
+constexpr std::size_t FTYPE_NAME = 1;
+constexpr std::size_t FTYPE_PARAMS = 3;
+constexpr std::size_t FTYPE_BODY = 6;
+constexpr std::size_t FTYPE_RETURN_TERM = 9;
+using FixedSymbol = std::pair<std::size_t, const char *>;
+const std::array<FixedSymbol, 5> FTYPE_VOID_FIXED = {
+    {{2, "("}, {4, ")"}, {5, "{"}, {7, "return"}, {8, "}"}}};
+const std::array<FixedSymbol, 7> FTYPE_NUM_FIXED = {
+    {{2, "("}, {4, ")"}, {5, "{"}, {7, "return"}, {8, "("}, {10, ")"},
+     {11, "}"}}};
+
 constexpr std::size_t LOOP_SIZE = 6;
 constexpr std::size_t LOOP_TEST_BOOL = 1;
 constexpr std::size_t LOOP_TEST_ALGO = 4;
 constexpr std::size_t LOOP_REPEAT_ALGO = 2;
 constexpr std::size_t LOOP_REPEAT_COND = 4;
 constexpr std::size_t LOOP_REPEAT_BOOL = 5;
-using FixedSymbol = std::pair<std::size_t, const char *>;
 const std::array<FixedSymbol, 3> LOOP_TEST_FIXED = {
     {{2, "do"}, {3, "{"}, {5, "}"}}};
 const std::array<FixedSymbol, 3> LOOP_REPEAT_FIXED = {
@@ -140,15 +153,60 @@ const std::string &condKind(const Node *cond) {
   return kind;
 }
 
-// F_DECL -> EPSILON | F_TYPE F_DECL
-std::string genFDecl(const Node *node) {
-  expectNode(node, "F_DECL");
-  if (node->children.empty())
-    return " ";
+// #if 0 keeps the mine inert even though the generated bodies contain
+// /* */ comments, which cannot nest inside one big C comment
+std::string wrapMine(const std::string &mine) {
+  return std::string("#if 0") + NEWLINE + mine + "#endif" + NEWLINE;
+}
 
-  expectSize(node, DECL_SIZE);
-  unsupported("function declarations",
-              "Phase 3b (function code-mine and inlining)");
+// the two parts of a function body that every F_TYPE and main share
+void expectBody(const Node *body) {
+  expectNode(body, "P");
+  expectSize(body, P_SIZE);
+  if (body->children[P_FIRST_COLON]->symbol != ":" ||
+      body->children[P_SECOND_COLON]->symbol != ":")
+    malformed("P expected ':' between its parts");
+}
+
+// returns true for a num function, false for a void procedure
+bool expectFunctionShape(const Node *node) {
+  expectNode(node, "F_TYPE");
+  if (node->children.empty())
+    malformed("F_TYPE has no children");
+
+  const std::string &kind = node->children[0]->symbol;
+  if (kind != "void" && kind != "num")
+    malformed("F_TYPE expected void or num but found " + kind);
+
+  bool isNum = kind == "num";
+  expectSize(node, isNum ? FTYPE_NUM_SIZE : FTYPE_VOID_SIZE);
+  if (isNum)
+    expectFixed(node, FTYPE_NUM_FIXED);
+  else
+    expectFixed(node, FTYPE_VOID_FIXED);
+
+  const Node *name = node->children[FTYPE_NAME];
+  if (!name->children.empty() || name->symbol.empty())
+    malformed("F_TYPE expected a NAME");
+  return isNum;
+}
+
+// V_DECL -> EPSILON | NAME V_DECL, as a list of names
+std::vector<std::string> declaredNames(const Node *node) {
+  std::vector<std::string> names;
+  while (true) {
+    expectNode(node, "V_DECL");
+    if (node->children.empty())
+      return names;
+
+    expectSize(node, DECL_SIZE);
+    const Node *name = node->children[0];
+    if (!name->children.empty() || name->symbol.empty())
+      malformed("V_DECL expected a NAME");
+
+    names.push_back(name->symbol);
+    node = node->children[1];
+  }
 }
 
 std::string labelLine(const std::string &label) {
@@ -506,22 +564,43 @@ std::string CodeGen::genProgram(Node *root) {
   if (root->children[PROG_END]->symbol != "$")
     malformed("SPL_PROG expected '$' after P");
 
+  functions.clear();
+  hoistedDecls.clear();
+  registerFunctions(root->children[PROG_P]);
+
   return genP(root->children[PROG_P]) + NEWLINE +
          "return 0; } /* end of executable C */";
 }
 
+void CodeGen::registerFunctions(Node *node) {
+  if (node == nullptr)
+    return;
+  if (node->symbol == "F_TYPE") {
+    expectFunctionShape(node);
+    const std::string &name = node->children[FTYPE_NAME]->symbol;
+    if (!functions.emplace(name, FunctionEntry{node, ""}).second)
+      malformed("function '" + name + "' is declared twice");
+  }
+  for (Node *child : node->children)
+    registerFunctions(child);
+}
+
+CodeGen::FunctionEntry &CodeGen::lookupFunction(const std::string &name) {
+  auto found = functions.find(name);
+  if (found == functions.end())
+    malformed("unknown function '" + name + "'");
+  return found->second;
+}
+
 // P -> V_DECL : F_DECL : ALGO
 std::string CodeGen::genP(Node *node) {
-  expectNode(node, "P");
-  expectSize(node, P_SIZE);
-  if (node->children[P_FIRST_COLON]->symbol != ":" ||
-      node->children[P_SECOND_COLON]->symbol != ":")
-    malformed("P expected ':' between its parts");
+  expectBody(node);
 
+  std::string mine = genFDecl(node->children[P_FDECL]);
   std::string out =
       "/* begin of the non-executable code-mine for later inlining */";
   out += NEWLINE;
-  out += genFDecl(node->children[P_FDECL]);
+  out += mine.empty() ? " " : wrapMine(mine);
   out += NEWLINE;
   out += "/* end of the non-executable code-mine */";
   out += NEWLINE;
@@ -535,7 +614,66 @@ std::string CodeGen::genP(Node *node) {
   out += NEWLINE;
   out += genVDecl(node->children[P_VDECL]);
   out += NEWLINE;
+  out += hoistedDecls;
   out += genAlgo(node->children[P_ALGO]);
+  return out;
+}
+
+// F_DECL -> EPSILON | F_TYPE F_DECL
+std::string CodeGen::genFDecl(Node *node) {
+  std::string out;
+  while (true) {
+    expectNode(node, "F_DECL");
+    if (node->children.empty())
+      return out;
+
+    expectSize(node, DECL_SIZE);
+    out += genFunction(node->children[0]);
+    node = node->children[1];
+  }
+}
+
+// A mine is rendered nested functions first, then the function itself. The
+// parameters, locals and result variable are also declared once in main (see
+// hoistedDecls), because the mine is not compiled.
+std::string CodeGen::genFunction(Node *node) {
+  bool isNum = expectFunctionShape(node);
+  const std::string &name = node->children[FTYPE_NAME]->symbol;
+  Node *body = node->children[FTYPE_BODY];
+  expectBody(body);
+
+  std::string out = genFDecl(body->children[P_FDECL]);
+
+  FunctionEntry &entry = lookupFunction(name);
+  if (isNum)
+    entry.returnVar = name + newVar();
+
+  for (const std::string &param : declaredNames(node->children[FTYPE_PARAMS]))
+    hoistedDecls += declare(param);
+  for (const std::string &local : declaredNames(body->children[P_VDECL]))
+    hoistedDecls += declare(local);
+  if (isNum)
+    hoistedDecls += declare(entry.returnVar);
+
+  const std::string label =
+      std::string(isNum ? "Function " : "void-procedure ") + name;
+  out += "begin of code-mine for " + label + NEWLINE;
+  out += std::string("Parameters for inlining:") + NEWLINE;
+  out += genVDecl(node->children[FTYPE_PARAMS]);
+  out += NEWLINE;
+  out += std::string("Body of the procedure:") + NEWLINE;
+  out += genVDecl(body->children[P_VDECL]);
+  out += NEWLINE;
+  out += genAlgo(body->children[P_ALGO]);
+  if (isNum) {
+    out += std::string(";") + NEWLINE;
+    out += genTerm(node->children[FTYPE_RETURN_TERM], entry.returnVar);
+  }
+  out += NEWLINE;
+  out += "end of code-mine for " + label + NEWLINE;
+  if (isNum)
+    out += "The result is found in the return value " + entry.returnVar +
+           NEWLINE;
   return out;
 }
 

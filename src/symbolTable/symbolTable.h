@@ -10,6 +10,9 @@ enum class DataType { NUM, STRING, VOID };
 // Phase 2b type attributes
 enum class SemType { UNKNOWN, NUMERIC, BOOLEAN, PROCEDURE, OK };
 
+// Whole-program number kind: mod forces INTEGER, anything else is FLOAT
+enum class NumberMode { INTEGER, FLOAT };
+
 struct VariableSymbol {
   std::string name;
   std::string systemName;
@@ -40,25 +43,29 @@ private:
   std::unordered_map<int, std::vector<Scope>> scopes;
   // keyed by system-generated name, which is unique after phase 2a
   std::unordered_map<std::string, SemType> nameTypes;
+  NumberMode numberMode = NumberMode::FLOAT;
 
 public:
   SymbolTable();
-bool existsInAnyScope(const std::string &name) const;
+  bool existsInAnyScope(const std::string& name) const;
   int createScope(int level, int parentId);
-  Scope *getScope(int scopeId);
-  const Scope *getScope(int scopeId) const;
+  Scope* getScope(int scopeId);
+  const Scope* getScope(int scopeId) const;
 
-  bool addVariable(int scopeId, VariableSymbol &symbol);
-  bool addFunction(int scopeId, FunctionSymbol &symbol);
+  bool addVariable(int scopeId, VariableSymbol& symbol);
+  bool addFunction(int scopeId, FunctionSymbol& symbol);
 
-  bool lookupVariable(const std::string &name, int startScopeId,
-                      VariableSymbol &outSymbol) const;
+  bool lookupVariable(const std::string& name, int startScopeId,
+    VariableSymbol& outSymbol) const;
 
-  bool lookupFunction(const std::string &name, int startScopeId,
-                      FunctionSymbol &outSymbol) const;
+  bool lookupFunction(const std::string& name, int startScopeId,
+    FunctionSymbol& outSymbol) const;
 
   void setNameType(const std::string &systemName, SemType type);
   SemType getNameType(const std::string &systemName) const;
+
+  void setNumberMode(NumberMode mode);
+  NumberMode getNumberMode() const;
 };
 
 #endif // SYMBOL_TABLE_H

@@ -94,6 +94,10 @@ SemType SymbolTable::getNameType(const std::string &systemName) const {
   return it != nameTypes.end() ? it->second : SemType::UNKNOWN;
 }
 
+void SymbolTable::setNumberMode(NumberMode mode) { numberMode = mode; }
+
+NumberMode SymbolTable::getNumberMode() const { return numberMode; }
+
 bool SymbolTable::existsInAnyScope(const std::string &name) const {
   for (const auto &pair : scopes) {
     for (const auto &scope : pair.second) {

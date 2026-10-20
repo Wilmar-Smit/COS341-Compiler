@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <map>
+#include <memory>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -14,8 +15,12 @@
 
 #include <pugixml.hpp>
 
+#include "Parser.h"
+#include "TreeBuilder.h"
+#include "scopeTree/scopeTree.h"
 #include "token.h"
 #include "tokenHandler.h"
+#include "typeChecker/typeChecker.h"
 
 // createChain() isn't `inline`, so only test_helpers.cpp includes
 // generic.handler.h directly - avoids an ODR link error elsewhere.
@@ -121,5 +126,38 @@ inline int countAncestorsWithContent(const std::vector<XmlNodeInfo> &nodes,
   }
   return count;
 }
+
+// Owns every stage of main.cpp's pipeline (lex -> parse -> ScopeTree ->
+// TypeChecker) so the renamed, type-checked tree stays alive for the test.
+// Members are declared in dependency order: they destroy in reverse.
+struct CompiledProgram {
+  std::vector<std::unique_ptr<Token>> tokens;
+  std::unique_ptr<TreeBuilder> tree;
+  std::unique_ptr<Parser> parser;
+  std::unique_ptr<ScopeTree> scopeTree;
+  std::unique_ptr<TypeChecker> typeChecker;
+  Node *root = nullptr;
+  // the whole-program number kind the Type Analyser recorded in Phase 2b
+  NumberMode numberMode = NumberMode::FLOAT;
+};
+
+// Throws std::runtime_error if any stage rejects `source`. Defined in
+// test_helpers.cpp.
+CompiledProgram compileSource(const std::string &source);
+
+// First compiler found among $CXX, g++, clang++, c++; empty if none. Defined
+// in test_helpers.cpp.
+std::string findCxxCompiler();
+
+// Wraps a generated ALGO fragment in a main() that declares the program's
+// top-level variables (taken from its V_DECL) as `numType`, zero-initialised.
+std::string wrapInMain(const CompiledProgram &program,
+                       const std::string &numType,
+                       const std::string &fragment);
+
+// Compiles `source` in the current directory under a unique name, runs it and
+// returns its stdout. Temporary files are removed afterwards. Throws
+// std::runtime_error if the compile or the run fails.
+std::string compileAndRun(const std::string &source);
 
 #endif
